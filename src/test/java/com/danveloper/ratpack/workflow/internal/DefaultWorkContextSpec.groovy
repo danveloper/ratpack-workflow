@@ -11,6 +11,8 @@ import ratpack.exec.Blocking
 import ratpack.registry.Registry
 import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
+import spock.lang.Ignore
+import spock.lang.Issue
 import spock.lang.Specification
 
 import java.util.concurrent.TimeUnit
@@ -384,6 +386,33 @@ class DefaultWorkContextSpec extends Specification {
 
     then:
     2 == adder.get()
+  }
+
+  @Ignore
+  @Issue("https://github.com/danveloper/ratpack-workflow/issues/1")
+  void "work should fail if no work handler exists"() {
+    setup:
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    AtomicInteger adder = new AtomicInteger()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .work("foo") {
+      adder.incrementAndGet()
+    }
+
+    when:
+    run(chain, repo)
+
+    then:
+    0 == adder.get()
+
+    when:
+    def works = execHarness.yield {
+      repo.list()
+    }.valueOrThrow
+
+    then:
+    1 == works.size()
+    works[0].state == WorkState.FAILED
   }
 
   private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository()) {
