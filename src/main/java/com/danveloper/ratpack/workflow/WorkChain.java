@@ -4,7 +4,7 @@ import ratpack.func.Action;
 
 public interface WorkChain {
   default WorkChain all(Work work) {
-    return work("", Works.all(work));
+    return work("", work::handle);
   }
 
   default WorkChain work(String type, Work work) {
