@@ -396,8 +396,5 @@ class DefaultWorkContextSpec extends Specification {
     execHarness.controller.eventLoopGroup.awaitTermination(1, TimeUnit.SECONDS)
   }
 
-  private static class TestObject {
-    String foo
-  }
 
 }

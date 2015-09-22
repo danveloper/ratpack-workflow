@@ -139,54 +139,59 @@ public class DefaultWorkContext implements WorkContext {
     return getContextRegistry().getAll(type);
   }
 
+  public static Promise<String> start(Work[] works, WorkStatus workStatus, WorkStatusRepository workStatusRepository) throws Exception {
+    EventLoop el = ExecController.require().getEventLoopGroup().next();
+    return start(works, el, workStatus, workStatusRepository);
+  }
+
   public static Promise<String> start(Work[] works, WorkConfigSource workConfigSource, WorkStatusRepository workStatusRepository) throws Exception {
     EventLoop el = ExecController.require().getEventLoopGroup().next();
     return start(works, el, workConfigSource, workStatusRepository);
   }
 
   public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkConfigSource workConfigSource, WorkStatusRepository workStatusRepository) throws Exception {
-    return Promise.of(f ->
-            Execution.fork()
-                .eventLoop(eventLoop)
-                .onError(Throwable::printStackTrace)
-                .start(e -> {
-                  WorkConstants workConstants = new WorkConstants();
-                  workConstants.eventLoop = eventLoop;
+    return workStatusRepository.create(workConfigSource)
+        .flatMap(workStatus -> start(works, eventLoop, workStatus, workStatusRepository));
+  }
 
-                  workStatusRepository.create(workConfigSource).then(workStatus -> {
-                    f.success(workStatus.getId());
+  public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkStatus workStatus, WorkStatusRepository workStatusRepository) throws Exception {
+    Execution.fork()
+        .eventLoop(eventLoop)
+        .onError(Throwable::printStackTrace)
+        .start(e -> {
+          WorkConstants workConstants = new WorkConstants();
+          workConstants.eventLoop = e.getEventLoop();
 
-                    e.onComplete(() -> {
-                      if (workStatus.getState() != WorkState.RUNNING) {
-                        return;
-                      }
-                      if (workStatus instanceof DefaultWorkStatus) {
-                        ((DefaultWorkStatus) workStatus).setEndTime(System.currentTimeMillis());
-                        ((DefaultWorkStatus) workStatus).setState(WorkState.COMPLETED);
-                        workStatusRepository.save(workStatus).operation().then();
-                      }
-                    });
+          e.onComplete(() -> {
+            if (workStatus.getState() != WorkState.RUNNING) {
+              return;
+            }
+            if (workStatus instanceof DefaultWorkStatus) {
+              ((DefaultWorkStatus) workStatus).setEndTime(System.currentTimeMillis());
+              ((DefaultWorkStatus) workStatus).setState(WorkState.COMPLETED);
+              workStatusRepository.save(workStatus).operation().then();
+            }
+          });
 
-                    Registry registry = Registry.of(r -> r
-                            .add(WorkConstants.class, workConstants)
-                            .add(WorkConfigSource.class, workConfigSource)
-                            .add(WorkStatus.class, workStatus)
-                            .add(WorkStatusRepository.class, workStatusRepository)
-                    );
-                    ChainIndex endChainIndex = new ChainIndex(new Work[]{end}, registry, true);
-                    workConstants.indexes.push(endChainIndex);
+          Registry registry = Registry.of(r -> r
+                  .add(WorkConstants.class, workConstants)
+                  .add(WorkConfigSource.class, workStatus.getConfig())
+                  .add(WorkStatus.class, workStatus)
+                  .add(WorkStatusRepository.class, workStatusRepository)
+          );
+          ChainIndex endChainIndex = new ChainIndex(new Work[]{end}, registry, true);
+          workConstants.indexes.push(endChainIndex);
 
-                    ChainIndex chainIndex = new ChainIndex(works, registry, true);
-                    workConstants.indexes.push(chainIndex);
+          ChainIndex chainIndex = new ChainIndex(works, registry, true);
+          workConstants.indexes.push(chainIndex);
 
-                    DefaultWorkContext context = new DefaultWorkContext(workConstants, registry);
-                    workConstants.context = context;
+          DefaultWorkContext context = new DefaultWorkContext(workConstants, registry);
+          workConstants.context = context;
 
-                    workConstants.execution = e;
-                    context.next();
-                  });
-                })
-    );
+          workConstants.execution = e;
+          context.next();
+        });
+    return Promise.value(workStatus.getId());
   }
 
   DefaultWorkContext(WorkConstants workConstants, Registry registry) {
