@@ -21,7 +21,7 @@ public class DefaultWorkContext implements WorkContext {
 
   @Override
   public WorkStatus getStatus() {
-    return registry.get(WorkStatus.class);
+    return getContextRegistry().get(WorkStatus.class);
   }
 
   @Override

@@ -369,6 +369,23 @@ class DefaultWorkContextSpec extends Specification {
     times[1] - times[0] >= 500
   }
 
+  void "should be able to insert work in the chain"() {
+    setup:
+    AtomicInteger adder = new AtomicInteger()
+    def extraWork = { ctx -> adder.incrementAndGet() } as Work
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all { ctx ->
+      adder.incrementAndGet()
+      ctx.insert(extraWork)
+    }
+
+    when:
+    run(chain)
+
+    then:
+    2 == adder.get()
+  }
+
   private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository()) {
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
