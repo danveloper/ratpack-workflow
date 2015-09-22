@@ -12,6 +12,10 @@ public class WorkConfigSource {
     this.typeVersion = configData.get(TypeVersion.class);
   }
 
+  public static WorkConfigSource of(ConfigData configData) {
+    return new WorkConfigSource(configData);
+  }
+
   public String getVersion() {
     return this.typeVersion.version;
   }
