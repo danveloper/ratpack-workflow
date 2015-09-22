@@ -3,6 +3,7 @@ package com.danveloper.ratpack.workflow.internal
 import com.danveloper.ratpack.workflow.FlowConfigSource
 import com.danveloper.ratpack.workflow.FlowStatusRepository
 import com.danveloper.ratpack.workflow.Work
+import com.danveloper.ratpack.workflow.WorkState
 import com.danveloper.ratpack.workflow.WorkStatusRepository
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
@@ -13,6 +14,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 class DefaultWorkProcessorSpec extends Specification {
 
@@ -84,5 +86,47 @@ class DefaultWorkProcessorSpec extends Specification {
 
     then:
     0l == latch.count
+  }
+
+  void "should fail a flow if one of the works has failed"() {
+    setup:
+    AtomicInteger adder = new AtomicInteger()
+    DefaultWorkChain chain = new DefaultWorkChain(Registry.empty())
+    .work("foo", "1.0") { ctx ->
+      adder.incrementAndGet()
+    }
+    .work("bar", "1.0") { ctx ->
+      throw new RuntimeException("!!")
+    }
+    .all { ctx ->
+      adder.incrementAndGet()
+    }
+    WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
+    FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
+    DefaultWorkProcessor processor = new DefaultWorkProcessor(chain.works as Work[], workStatusRepository, flowStatusRepository)
+
+    when:
+    execHarness.run {
+      processor.onStart(null)
+      flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
+        processor.start(flowStatus).operation().then()
+      }
+    }
+
+    and:
+    execHarness.controller.eventLoopGroup.awaitTermination(5, TimeUnit.SECONDS)
+
+    and:
+    def flows = execHarness.yield {
+      flowStatusRepository.list()
+    }.valueOrThrow
+
+    then:
+    1 == adder.get()
+    1 == flows.size()
+    flows[0].state == WorkState.FAILED
+    flows[0].works[0].state == WorkState.COMPLETED
+    flows[0].works[1].state == WorkState.FAILED
+    flows[0].works[1].error.message == "!!"
   }
 }
