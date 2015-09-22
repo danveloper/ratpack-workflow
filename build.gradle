@@ -1,0 +1,20 @@
+buildscript {
+  repositories {
+    jcenter()
+  }
+  dependencies {
+    classpath 'io.ratpack:ratpack-gradle:1.0.0'
+  }
+}
+
+apply plugin: 'io.ratpack.ratpack-java'
+apply plugin: 'idea'
+
+repositories {
+  jcenter()
+}
+
+dependencies {
+  compile ratpack.dependency("rx")
+  testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+}

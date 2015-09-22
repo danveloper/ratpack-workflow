@@ -1,0 +1,15 @@
+*.class
+out/
+build/
+.gradle/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+*.log
+web/src/main/resources/app.yml
+*.rdb
+*.orig
+distributions/
+web/src/main/resources/public/manual
