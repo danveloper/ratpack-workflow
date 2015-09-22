@@ -93,10 +93,11 @@ class DefaultWorkProcessorSpec extends Specification {
     AtomicInteger adder = new AtomicInteger()
     DefaultWorkChain chain = new DefaultWorkChain(Registry.empty())
     .work("foo", "1.0") { ctx ->
-      adder.incrementAndGet()
+      throw new RuntimeException("!!")
     }
     .work("bar", "1.0") { ctx ->
-      throw new RuntimeException("!!")
+      adder.incrementAndGet()
+      ctx.next()
     }
     .all { ctx ->
       adder.incrementAndGet()
@@ -122,11 +123,11 @@ class DefaultWorkProcessorSpec extends Specification {
     }.valueOrThrow
 
     then:
-    1 == adder.get()
+    0 == adder.get()
     1 == flows.size()
     flows[0].state == WorkState.FAILED
-    flows[0].works[0].state == WorkState.COMPLETED
-    flows[0].works[1].state == WorkState.FAILED
-    flows[0].works[1].error.message == "!!"
+    flows[0].works[0].state == WorkState.FAILED
+    flows[0].works[0].error.message == "!!"
+    flows[0].works[1].state == WorkState.NOT_STARTED
   }
 }
