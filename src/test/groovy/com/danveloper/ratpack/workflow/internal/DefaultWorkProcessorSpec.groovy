@@ -63,8 +63,9 @@ class DefaultWorkProcessorSpec extends Specification {
           latch.countDown()
           ctx.next()
         }
-        .all {
+        .all { ctx ->
           latch.countDown()
+          ctx.complete()
         }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
@@ -77,9 +78,6 @@ class DefaultWorkProcessorSpec extends Specification {
         processor.start(flowStatus).operation().then()
       }
     }
-
-    and:
-    execHarness.controller.eventLoopGroup.awaitTermination(1, TimeUnit.SECONDS)
 
     and:
     latch.await(10, TimeUnit.SECONDS)

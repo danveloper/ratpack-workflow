@@ -70,7 +70,7 @@ class FlowSubmissionHandlerSpec extends Specification {
     }.post()
 
     then:
-    resp.statusCode == 204
+    resp.statusCode == 202
     1 * repo.create(_) >> { FlowConfigSource config ->
       assert config.name == "AWESOMEWORKFLOW-001-EL8_MODE"
       assert config.description == "My really awesome workflow!"

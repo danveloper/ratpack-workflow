@@ -14,13 +14,13 @@ class DefaultWorkChainSpec extends Specification {
       .flow("flow") { schain ->
         schain.work("foo") {}
       }
-    TypedVersionedWork flowwork = chain.works.find { TypedVersionedWork w -> w.@type == "flow" }
+    TypedVersionedWork flowwork = chain.works.find { TypedVersionedWork w -> w.getType() == "flow" }
 
     expect:
     4 == chain.works.size()
-    ["resize", "autoscale", "", "flow"] == chain.works.collect { TypedVersionedWork w -> w.@type }
-    flowwork.@delegate instanceof WorkChainWork
-    1 == flowwork.@delegate.works.size()
-    flowwork.@delegate.works[0].@type == "foo"
+    ["resize", "autoscale", "", "flow"] == chain.works.collect { TypedVersionedWork w -> w.getType() }
+    flowwork.getDelegate() instanceof WorkChainWork
+    1 == flowwork.getDelegate().works.size()
+    flowwork.getDelegate().works[0].getType() == "flow/foo"
   }
 }

@@ -226,6 +226,8 @@ class DefaultWorkContextSpec extends Specification {
       def num = adder.incrementAndGet()
       if (num < 2) {
         ctx.retry()
+      } else {
+        ctx.complete()
       }
     }
 
@@ -244,6 +246,8 @@ class DefaultWorkContextSpec extends Specification {
       def status = ctx.get(WorkStatus)
       if (status.state != WorkState.RUNNING) {
         throw new RuntimeException("!!")
+      } else {
+        ctx.complete()
       }
     }
 
@@ -271,6 +275,8 @@ class DefaultWorkContextSpec extends Specification {
       Optional<TestObject> obj = ctx.maybeGet(TestObject)
       if (!obj.present) {
         throw new RuntimeException("!!")
+      } else {
+        ctx.complete()
       }
     }
 
@@ -292,7 +298,7 @@ class DefaultWorkContextSpec extends Specification {
     def repo = new InMemoryWorkStatusRepository()
     DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
     .all { ctx ->
-      ctx.next()
+      ctx.complete()
     }
 
     when:
@@ -322,6 +328,8 @@ class DefaultWorkContextSpec extends Specification {
       def obj = ctx.maybeGet(TestObject)
       if (!obj.present || obj.get().foo != "bar") {
         throw new RuntimeException()
+      } else {
+        ctx.complete()
       }
     }
 
