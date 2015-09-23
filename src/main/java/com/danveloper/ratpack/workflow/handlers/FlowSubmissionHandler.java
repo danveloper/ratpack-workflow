@@ -9,7 +9,6 @@ import ratpack.config.ConfigData;
 import ratpack.handling.Context;
 import ratpack.handling.Handler;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import static ratpack.jackson.Jackson.json;

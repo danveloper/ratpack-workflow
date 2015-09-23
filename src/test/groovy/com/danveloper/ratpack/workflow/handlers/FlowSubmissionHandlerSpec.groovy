@@ -5,7 +5,6 @@ import com.danveloper.ratpack.workflow.FlowStatus
 import com.danveloper.ratpack.workflow.FlowStatusRepository
 import com.danveloper.ratpack.workflow.WorkProcessor
 import com.danveloper.ratpack.workflow.internal.DefaultFlowStatus
-import com.fasterxml.jackson.databind.ObjectMapper
 import ratpack.exec.Promise
 import ratpack.func.Action
 import ratpack.test.embed.EmbeddedApp
