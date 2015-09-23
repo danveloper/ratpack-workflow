@@ -16,5 +16,8 @@ repositories {
 
 dependencies {
   compile ratpack.dependency("rx")
+  compile ratpack.dependency("guice")
+  testCompile ratpack.dependency("groovy-test")
+  testCompile 'cglib:cglib-nodep:3.1'
   testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
 }

@@ -20,7 +20,7 @@ public class InMemoryFlowStatusRepository implements FlowStatusRepository {
 
   private final WorkStatusRepository workStatusRepository;
 
-  InMemoryFlowStatusRepository(WorkStatusRepository workStatusRepository) {
+  public InMemoryFlowStatusRepository(WorkStatusRepository workStatusRepository) {
     this.workStatusRepository = workStatusRepository;
   }
 

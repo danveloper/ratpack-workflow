@@ -53,6 +53,7 @@ public class DefaultWorkChain implements WorkChain {
     return this;
   }
 
+  @Override
   public List<Work> getWorks() {
     return this.works;
   }
