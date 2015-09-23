@@ -1,23 +1,28 @@
-buildscript {
-  repositories {
-    jcenter()
-  }
-  dependencies {
-    classpath 'io.ratpack:ratpack-gradle:1.0.0'
-  }
-}
-
-apply plugin: 'io.ratpack.ratpack-java'
+apply plugin: 'groovy'
 apply plugin: 'idea'
+apply plugin: 'jacoco'
 
 repositories {
   jcenter()
 }
 
+ext {
+  ratpackVersion = "1.0.0"
+}
+
 dependencies {
-  compile ratpack.dependency("rx")
-  compile ratpack.dependency("guice")
-  testCompile ratpack.dependency("groovy-test")
+  compile "io.ratpack:ratpack-rx:${ratpackVersion}"
+  compile "io.ratpack:ratpack-guice:${ratpackVersion}"
+  testCompile "org.codehaus.groovy:groovy-all:2.4.4"
+  testCompile "io.ratpack:ratpack-groovy-test:${ratpackVersion}"
   testCompile 'cglib:cglib-nodep:3.1'
   testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+}
+
+jacocoTestReport {
+  reports {
+    xml.enabled false
+    csv.enabled false
+    html.destination "${buildDir}/jacocoHtml"
+  }
 }

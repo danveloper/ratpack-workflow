@@ -388,8 +388,6 @@ class DefaultWorkContextSpec extends Specification {
     2 == adder.get()
   }
 
-  @Ignore
-  @Issue("https://github.com/danveloper/ratpack-workflow/issues/1")
   void "work should fail if no work handler exists"() {
     setup:
     InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()

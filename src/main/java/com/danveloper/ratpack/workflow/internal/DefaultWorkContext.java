@@ -17,6 +17,7 @@ public class DefaultWorkContext implements WorkContext {
   private final WorkConstants workConstants;
   private final Registry registry;
   private static final Work end = ctx -> {
+    throw new RuntimeException("work was never handled!");
   };
 
   @Override
