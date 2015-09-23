@@ -3,7 +3,9 @@ package com.danveloper.ratpack.workflow.internal
 import com.danveloper.ratpack.workflow.*
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
+import ratpack.func.Action
 import ratpack.registry.Registry
+import ratpack.server.internal.DefaultEvent
 import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
 import spock.lang.Specification
@@ -50,26 +52,27 @@ class DefaultWorkProcessorSpec extends Specification {
   void "should invoke all work for a given description and chain"() {
     setup:
     CountDownLatch latch = new CountDownLatch(3)
-    DefaultWorkChain chain = new DefaultWorkChain(Registry.empty())
-        .work("foo", "1.0") { ctx ->
-          latch.countDown()
-          ctx.next()
-        }
-        .work("bar", "1.0") { ctx ->
-          latch.countDown()
-          ctx.next()
-        }
-        .all { ctx ->
-          latch.countDown()
-          ctx.complete()
-        }
+    Action<WorkChain> actChain = { chain -> chain
+      .work("foo", "1.0") { ctx ->
+        latch.countDown()
+        ctx.next()
+      }
+      .work("bar", "1.0") { ctx ->
+        latch.countDown()
+        ctx.next()
+      }
+      .all { ctx ->
+        latch.countDown()
+        ctx.complete()
+      }
+    }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
-    DefaultWorkProcessor processor = new DefaultWorkProcessor(chain.works as Work[], workStatusRepository, flowStatusRepository)
+    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, workStatusRepository, flowStatusRepository)
 
     when:
     execHarness.run {
-      processor.onStart(null)
+      processor.onStart(new DefaultEvent(Registry.empty(), false))
       flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
         processor.start(flowStatus).operation().then()
       }
@@ -85,24 +88,25 @@ class DefaultWorkProcessorSpec extends Specification {
   void "should fail a flow if one of the works has failed"() {
     setup:
     AtomicInteger adder = new AtomicInteger()
-    DefaultWorkChain chain = new DefaultWorkChain(Registry.empty())
-    .work("foo", "1.0") { ctx ->
-      throw new RuntimeException("!!")
-    }
-    .work("bar", "1.0") { ctx ->
-      adder.incrementAndGet()
-      ctx.next()
-    }
-    .all { ctx ->
-      adder.incrementAndGet()
+    Action<WorkChain> actChain = { chain -> chain
+      .work("foo", "1.0") { ctx ->
+        throw new RuntimeException("!!")
+      }
+      .work("bar", "1.0") { ctx ->
+        adder.incrementAndGet()
+        ctx.next()
+      }
+      .all { ctx ->
+        adder.incrementAndGet()
+      }
     }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
-    DefaultWorkProcessor processor = new DefaultWorkProcessor(chain.works as Work[], workStatusRepository, flowStatusRepository)
+    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, workStatusRepository, flowStatusRepository)
 
     when:
     execHarness.run {
-      processor.onStart(null)
+      processor.onStart(new DefaultEvent(Registry.empty(), false))
       flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
         processor.start(flowStatus).operation().then()
       }

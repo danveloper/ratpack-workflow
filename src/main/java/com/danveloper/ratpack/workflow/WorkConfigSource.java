@@ -1,5 +1,6 @@
 package com.danveloper.ratpack.workflow;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import ratpack.config.ConfigData;
 
 public class WorkConfigSource {

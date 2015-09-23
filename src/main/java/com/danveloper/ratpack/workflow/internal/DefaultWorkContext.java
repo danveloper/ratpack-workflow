@@ -151,22 +151,22 @@ public class DefaultWorkContext implements WorkContext {
     return getContextRegistry().getAll(type);
   }
 
-  public static Promise<String> start(Work[] works, WorkStatus workStatus, WorkStatusRepository workStatusRepository) throws Exception {
+  public static Promise<String> start(Work[] works, WorkStatus workStatus, WorkStatusRepository workStatusRepository, Registry registry) throws Exception {
     EventLoop el = ExecController.require().getEventLoopGroup().next();
-    return start(works, el, workStatus, workStatusRepository);
+    return start(works, el, workStatus, workStatusRepository, registry);
   }
 
-  public static Promise<String> start(Work[] works, WorkConfigSource workConfigSource, WorkStatusRepository workStatusRepository) throws Exception {
+  public static Promise<String> start(Work[] works, WorkConfigSource workConfigSource, WorkStatusRepository workStatusRepository, Registry registry) throws Exception {
     EventLoop el = ExecController.require().getEventLoopGroup().next();
-    return start(works, el, workConfigSource, workStatusRepository);
+    return start(works, el, workConfigSource, workStatusRepository, registry);
   }
 
-  public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkConfigSource workConfigSource, WorkStatusRepository workStatusRepository) throws Exception {
+  public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkConfigSource workConfigSource, WorkStatusRepository workStatusRepository, Registry registry) throws Exception {
     return workStatusRepository.create(workConfigSource)
-        .flatMap(workStatus -> start(works, eventLoop, workStatus, workStatusRepository));
+        .flatMap(workStatus -> start(works, eventLoop, workStatus, workStatusRepository, registry));
   }
 
-  public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkStatus workStatus, WorkStatusRepository workStatusRepository) throws Exception {
+  public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkStatus workStatus, WorkStatusRepository workStatusRepository, final Registry outerRegistry) throws Exception {
     Execution.fork()
         .eventLoop(eventLoop)
         .onError(Throwable::printStackTrace)
@@ -186,12 +186,12 @@ public class DefaultWorkContext implements WorkContext {
             }
           });
 
-          Registry registry = Registry.of(r -> r
+          Registry subregistry = Registry.of(r -> r
                   .add(WorkConstants.class, workConstants)
                   .add(WorkConfigSource.class, workStatus.getConfig())
                   .add(WorkStatus.class, workStatus)
-                  .add(WorkStatusRepository.class, workStatusRepository)
           );
+          Registry registry = outerRegistry.join(subregistry);
           ChainIndex endChainIndex = new ChainIndex(new Work[]{end}, registry, true);
           workConstants.indexes.push(endChainIndex);
 

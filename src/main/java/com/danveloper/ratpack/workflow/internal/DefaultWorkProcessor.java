@@ -5,6 +5,7 @@ import ratpack.exec.ExecController;
 import ratpack.exec.Execution;
 import ratpack.exec.Promise;
 import ratpack.func.Action;
+import ratpack.registry.Registry;
 import ratpack.server.Service;
 import ratpack.server.StartEvent;
 
@@ -17,6 +18,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
   private final FlowStatusRepository flowStatusRepository;
 
   private Work[] works;
+  private Registry registry;
 
   public DefaultWorkProcessor(Action<WorkChain> workChainAction, WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) {
     this.workChainAction = workChainAction;
@@ -26,7 +28,8 @@ public class DefaultWorkProcessor implements WorkProcessor {
 
   @Override
   public void onStart(StartEvent event) throws Exception {
-    DefaultWorkChain chain = new DefaultWorkChain(event.getRegistry());
+    registry = event.getRegistry();
+    DefaultWorkChain chain = new DefaultWorkChain(registry);
     workChainAction.execute(chain);
     this.works = chain.getWorks().toArray(new Work[chain.getWorks().size()]);
     ExecController.require().getExecutor().scheduleAtFixedRate(new FlowSupervisor(), 0, 1, TimeUnit.SECONDS);
@@ -50,7 +53,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
   @Override
   public Promise<String> start(WorkStatus workStatus) {
     try {
-      return DefaultWorkContext.start(works, workStatus, workStatusRepository);
+      return DefaultWorkContext.start(works, workStatus, workStatusRepository, registry);
     } catch (Exception e) {
       return Promise.of(f -> f.error(e));
     }

@@ -50,7 +50,7 @@ class DefaultWorkContextSpec extends Specification {
     when:
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
-          .start(chain.works as Work[], new WorkConfigSource(d), new InMemoryWorkStatusRepository())
+          .start(chain.works as Work[], new WorkConfigSource(d), new InMemoryWorkStatusRepository(), Registry.empty())
           .operation()
           .then()
     }
@@ -88,7 +88,7 @@ class DefaultWorkContextSpec extends Specification {
     when:
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
-          .start(chain.works as Work[], new WorkConfigSource(d), new InMemoryWorkStatusRepository())
+          .start(chain.works as Work[], new WorkConfigSource(d), new InMemoryWorkStatusRepository(), Registry.empty())
           .operation()
           .then()
     }
@@ -193,7 +193,7 @@ class DefaultWorkContextSpec extends Specification {
     when:
     String id = ExecHarness.yieldSingle { exec ->
       DefaultWorkContext
-          .start(chain.works as Work[], config, workStatusRepository)
+          .start(chain.works as Work[], config, workStatusRepository, Registry.empty())
     }.valueOrThrow
 
     and:
@@ -361,7 +361,7 @@ class DefaultWorkContextSpec extends Specification {
     when:
     execHarness.run { exec ->
       DefaultWorkContext
-          .start(chain.works as Work[], config, new InMemoryWorkStatusRepository())
+          .start(chain.works as Work[], config, new InMemoryWorkStatusRepository(), Registry.empty())
           .operation()
           .then()
     }
@@ -463,7 +463,7 @@ class DefaultWorkContextSpec extends Specification {
   private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository()) {
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
-          .start(chain.works as Work[], config, repository)
+          .start(chain.works as Work[], config, repository, Registry.empty())
           .operation()
           .then()
     }
