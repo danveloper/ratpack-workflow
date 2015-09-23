@@ -413,6 +413,27 @@ class DefaultWorkContextSpec extends Specification {
     works[0].state == WorkState.FAILED
   }
 
+  void "should detect dangling executions"() {
+    setup:
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all {
+      // do nothing
+    }
+
+    when:
+    run(chain, repo)
+
+    and:
+    def works = execHarness.yield {
+      repo.list()
+    }.valueOrThrow
+
+    then:
+    1 == works.size()
+    works[0].state == WorkState.FAILED
+  }
+
   private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository()) {
     ExecHarness.runSingle { exec ->
       DefaultWorkContext

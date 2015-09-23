@@ -126,6 +126,11 @@ public class DefaultWorkContext implements WorkContext {
   }
 
   @Override
+  public void complete() {
+    this.workConstants.completed = true;
+  }
+
+  @Override
   public Execution getExecution() {
     return this.workConstants.execution;
   }
@@ -168,8 +173,9 @@ public class DefaultWorkContext implements WorkContext {
               return;
             }
             if (workStatus instanceof DefaultWorkStatus) {
+              WorkState resultState = workConstants.completed ? WorkState.COMPLETED : WorkState.FAILED;
               ((DefaultWorkStatus) workStatus).setEndTime(System.currentTimeMillis());
-              ((DefaultWorkStatus) workStatus).setState(WorkState.COMPLETED);
+              ((DefaultWorkStatus) workStatus).setState(resultState);
               workStatusRepository.save(workStatus).operation().then();
             }
           });
@@ -208,6 +214,7 @@ public class DefaultWorkContext implements WorkContext {
     private Execution execution;
     private EventLoop eventLoop;
     private WorkContext context;
+    private boolean completed;
     private final Deque<ChainIndex> indexes = Lists.newLinkedList();
   }
 

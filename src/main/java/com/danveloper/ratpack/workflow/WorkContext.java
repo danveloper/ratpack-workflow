@@ -17,5 +17,6 @@ public interface WorkContext extends Registry {
   void retry();
   void retry(Registry registry);
   void fail(Throwable t);
+  void complete();
   Execution getExecution();
 }
