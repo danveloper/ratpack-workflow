@@ -41,6 +41,12 @@ public class DefaultWorkContext implements WorkContext {
   }
 
   @Override
+  public void message(String message) {
+    DefaultWorkStatus status = (DefaultWorkStatus)getContextRegistry().get(WorkStatus.class);
+    status.getMessages().add(new WorkStatus.WorkStatusMessage(System.currentTimeMillis(), message));
+  }
+
+  @Override
   public void insert(Work... works) {
     if (works.length == 0) {
       throw new IllegalArgumentException("works is zero length");

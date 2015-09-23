@@ -9,6 +9,7 @@ public interface WorkContext extends Registry {
   Long getEndTime();
 
   WorkConfigSource getConfig();
+  void message(String message);
 
   void insert(Registry registry, Work...works);
   void insert(Work...works);

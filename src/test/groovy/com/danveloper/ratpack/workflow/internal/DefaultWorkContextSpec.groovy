@@ -434,6 +434,30 @@ class DefaultWorkContextSpec extends Specification {
     works[0].state == WorkState.FAILED
   }
 
+  void "messages should be saved with the workstatus"() {
+    setup:
+    def message = "msg"
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all { ctx ->
+      ctx.message(message)
+      ctx.complete()
+    }
+
+    when:
+    run(chain, repo)
+
+    and:
+    def works = execHarness.yield {
+      repo.list()
+    }.valueOrThrow
+
+    then:
+    1 == works.size()
+    1 == works[0].messages.size()
+    works[0].messages[0].content == message
+  }
+
   private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository()) {
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
