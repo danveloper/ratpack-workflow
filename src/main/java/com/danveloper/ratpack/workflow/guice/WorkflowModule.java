@@ -2,12 +2,16 @@ package com.danveloper.ratpack.workflow.guice;
 
 import com.danveloper.ratpack.workflow.*;
 import com.danveloper.ratpack.workflow.handlers.*;
+import com.danveloper.ratpack.workflow.internal.DefaultWorkChain;
 import com.danveloper.ratpack.workflow.internal.DefaultWorkProcessor;
 import com.danveloper.ratpack.workflow.internal.InMemoryFlowStatusRepository;
 import com.danveloper.ratpack.workflow.internal.InMemoryWorkStatusRepository;
 import com.google.inject.Provides;
+import ratpack.func.Action;
 import ratpack.func.Factory;
 import ratpack.guice.ConfigurableModule;
+import ratpack.guice.Guice;
+import ratpack.registry.Registry;
 
 public class WorkflowModule extends ConfigurableModule<WorkflowModule.Config> {
   public static class Config {
@@ -53,6 +57,16 @@ public class WorkflowModule extends ConfigurableModule<WorkflowModule.Config> {
 
   public static WorkSubmissionHandler workSubmissionHandler() {
     return new WorkSubmissionHandler();
+  }
+
+  public static Registry registry(Registry base, Action<WorkChain> configurer) throws Exception{
+    return Guice.registry(b -> {
+      b.module(WorkflowModule.class, config -> {
+        WorkChain chain = new DefaultWorkChain(base);
+        configurer.execute(chain);
+        config.chainFactory(() -> chain);
+      });
+    }).apply(base);
   }
 
   @Override
