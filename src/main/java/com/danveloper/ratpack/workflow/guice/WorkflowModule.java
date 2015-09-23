@@ -1,38 +1,24 @@
 package com.danveloper.ratpack.workflow.guice;
 
-import com.danveloper.ratpack.workflow.*;
+import com.danveloper.ratpack.workflow.FlowStatusRepository;
+import com.danveloper.ratpack.workflow.WorkChain;
+import com.danveloper.ratpack.workflow.WorkProcessor;
+import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import com.danveloper.ratpack.workflow.handlers.*;
-import com.danveloper.ratpack.workflow.internal.DefaultWorkChain;
 import com.danveloper.ratpack.workflow.internal.DefaultWorkProcessor;
 import com.danveloper.ratpack.workflow.internal.InMemoryFlowStatusRepository;
 import com.danveloper.ratpack.workflow.internal.InMemoryWorkStatusRepository;
+import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import ratpack.func.Action;
-import ratpack.func.Factory;
-import ratpack.guice.ConfigurableModule;
-import ratpack.guice.Guice;
-import ratpack.registry.Registry;
 
-public class WorkflowModule extends ConfigurableModule<WorkflowModule.Config> {
-  public static class Config {
-    private Factory<WorkChain> chainFactory = () -> null;
-    private WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository();
-    private FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository);
+public class WorkflowModule extends AbstractModule {
+  private final Action<WorkChain> chain;
+  private WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository();
+  private FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository);
 
-    public Config chainFactory(Factory<WorkChain> factory) {
-      this.chainFactory = factory;
-      return this;
-    }
-
-    public Config workStatusRepository(WorkStatusRepository repo) {
-      this.workStatusRepository = repo;
-      return this;
-    }
-
-    public Config flowStatusRepository(FlowStatusRepository repo) {
-      this.flowStatusRepository = repo;
-      return this;
-    }
+  private WorkflowModule(Action<WorkChain> chain) {
+    this.chain = chain;
   }
 
   public static FlowListHandler flowListHandler() {
@@ -59,34 +45,24 @@ public class WorkflowModule extends ConfigurableModule<WorkflowModule.Config> {
     return new WorkSubmissionHandler();
   }
 
-  public static Registry registry(Registry base, Action<WorkChain> configurer) throws Exception{
-    return Guice.registry(b -> {
-      b.module(WorkflowModule.class, config -> {
-        WorkChain chain = new DefaultWorkChain(base);
-        configurer.execute(chain);
-        config.chainFactory(() -> chain);
-      });
-    }).apply(base);
+  public static WorkflowModule of(Action<WorkChain> chain) {
+    return new WorkflowModule(chain);
+  }
+
+  public WorkflowModule withWorkStatusRepository(WorkStatusRepository workStatusRepository) {
+    this.workStatusRepository = workStatusRepository;
+    return this;
+  }
+
+  public WorkflowModule withFlowStatusRepository(FlowStatusRepository flowStatusRepository) {
+    this.flowStatusRepository = flowStatusRepository;
+    return this;
   }
 
   @Override
   protected void configure() {
-  }
-
-  @Provides
-  WorkStatusRepository workStatusRepository(Config config) {
-    return config.workStatusRepository;
-  }
-
-  @Provides
-  FlowStatusRepository flowStatusRepository(Config config) {
-    return config.flowStatusRepository;
-  }
-
-  @Provides
-  WorkProcessor workProcessor(Config config, WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) throws Exception {
-    WorkChain workChain = config.chainFactory.create();
-    Work[] works = workChain.getWorks().toArray(new Work[workChain.getWorks().size()]);
-    return new DefaultWorkProcessor(works, workStatusRepository, flowStatusRepository);
+    bind(WorkStatusRepository.class).toInstance(workStatusRepository);
+    bind(FlowStatusRepository.class).toInstance(flowStatusRepository);
+    bind(WorkProcessor.class).toInstance(new DefaultWorkProcessor(chain, workStatusRepository, flowStatusRepository));
   }
 }

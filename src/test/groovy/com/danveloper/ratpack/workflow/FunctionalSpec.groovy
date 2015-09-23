@@ -3,6 +3,7 @@ package com.danveloper.ratpack.workflow
 import com.danveloper.ratpack.workflow.guice.WorkflowModule
 import com.fasterxml.jackson.databind.ObjectMapper
 import ratpack.func.Action
+import ratpack.guice.Guice
 import ratpack.test.embed.EmbeddedApp
 import spock.lang.AutoCleanup
 import spock.lang.Specification
@@ -47,13 +48,14 @@ class FunctionalSpec extends Specification {
   @AutoCleanup
   @Delegate
   EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .handlers { chain -> chain
-        .register(WorkflowModule.registry(chain.registry) { wchain ->
-          wchain.all { ctx ->
+      .registry(Guice.registry { b -> b
+        .module WorkflowModule.of { chain ->
+          chain.all {
             latch.countDown()
-            ctx.complete()
           }
-        })
+        }
+      })
+      .handlers { chain -> chain
         .prefix("ops") { pchain ->
           pchain.post(WorkflowModule.workSubmissionHandler())
           .get(WorkflowModule.workListHandler())

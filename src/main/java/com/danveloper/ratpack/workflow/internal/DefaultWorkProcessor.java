@@ -4,25 +4,31 @@ import com.danveloper.ratpack.workflow.*;
 import ratpack.exec.ExecController;
 import ratpack.exec.Execution;
 import ratpack.exec.Promise;
+import ratpack.func.Action;
 import ratpack.server.Service;
 import ratpack.server.StartEvent;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-public class DefaultWorkProcessor implements WorkProcessor, Service {
-  private final Work[] works;
+public class DefaultWorkProcessor implements WorkProcessor {
+  private final Action<WorkChain> workChainAction;
   private final WorkStatusRepository workStatusRepository;
   private final FlowStatusRepository flowStatusRepository;
 
-  public DefaultWorkProcessor(Work[] works, WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) {
-    this.works = works;
+  private Work[] works;
+
+  public DefaultWorkProcessor(Action<WorkChain> workChainAction, WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) {
+    this.workChainAction = workChainAction;
     this.workStatusRepository = workStatusRepository;
     this.flowStatusRepository = flowStatusRepository;
   }
 
   @Override
-  public void onStart(StartEvent event) {
+  public void onStart(StartEvent event) throws Exception {
+    DefaultWorkChain chain = new DefaultWorkChain(event.getRegistry());
+    workChainAction.execute(chain);
+    this.works = chain.getWorks().toArray(new Work[chain.getWorks().size()]);
     ExecController.require().getExecutor().scheduleAtFixedRate(new FlowSupervisor(), 0, 1, TimeUnit.SECONDS);
   }
 
