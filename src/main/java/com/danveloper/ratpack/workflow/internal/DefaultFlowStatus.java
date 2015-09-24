@@ -88,4 +88,35 @@ public class DefaultFlowStatus implements FlowStatus {
   public List<WorkStatus> getWorks() {
     return this.works;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    DefaultFlowStatus that = (DefaultFlowStatus) o;
+
+    if (id != null ? !id.equals(that.id) : that.id != null) return false;
+    if (name != null ? !name.equals(that.name) : that.name != null) return false;
+    if (description != null ? !description.equals(that.description) : that.description != null) return false;
+    if (startTime != null ? !startTime.equals(that.startTime) : that.startTime != null) return false;
+    if (endTime != null ? !endTime.equals(that.endTime) : that.endTime != null) return false;
+    if (state != that.state) return false;
+    if (tags != null ? !tags.equals(that.tags) : that.tags != null) return false;
+    return !(works != null ? !works.equals(that.works) : that.works != null);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = id != null ? id.hashCode() : 0;
+    result = 31 * result + (name != null ? name.hashCode() : 0);
+    result = 31 * result + (description != null ? description.hashCode() : 0);
+    result = 31 * result + (startTime != null ? startTime.hashCode() : 0);
+    result = 31 * result + (endTime != null ? endTime.hashCode() : 0);
+    result = 31 * result + (state != null ? state.hashCode() : 0);
+    result = 31 * result + (tags != null ? tags.hashCode() : 0);
+    result = 31 * result + (works != null ? works.hashCode() : 0);
+    return result;
+  }
 }

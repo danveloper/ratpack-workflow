@@ -1,8 +1,10 @@
 package com.danveloper.ratpack.workflow;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.danveloper.ratpack.workflow.internal.WorkConfigSourceSerializer;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import ratpack.config.ConfigData;
 
+@JsonSerialize(using = WorkConfigSourceSerializer.class)
 public class WorkConfigSource {
 
   private final ConfigData configData;
@@ -52,5 +54,43 @@ public class WorkConfigSource {
     public void setVersion(String version) {
       this.version = version;
     }
+
+    @Override
+    public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      TypeVersion that = (TypeVersion) o;
+
+      if (type != null ? !type.equals(that.type) : that.type != null) return false;
+      return !(version != null ? !version.equals(that.version) : that.version != null);
+
+    }
+
+    @Override
+    public int hashCode() {
+      int result = type != null ? type.hashCode() : 0;
+      result = 31 * result + (version != null ? version.hashCode() : 0);
+      return result;
+    }
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    WorkConfigSource that = (WorkConfigSource) o;
+
+    if (configData.getRootNode() != null ? !configData.getRootNode().equals(that.configData.getRootNode()) : that.configData.getRootNode() != null) return false;
+    return !(typeVersion != null ? !typeVersion.equals(that.typeVersion) : that.typeVersion != null);
+
+  }
+
+  @Override
+  public int hashCode() {
+    int result = configData.getRootNode() != null ? configData.getRootNode().hashCode() : 0;
+    result = 31 * result + (typeVersion != null ? typeVersion.hashCode() : 0);
+    return result;
   }
 }
