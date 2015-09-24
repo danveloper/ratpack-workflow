@@ -1,0 +1,6 @@
+dependencies {
+  compile "io.ratpack:ratpack-rx:${ratpackVersion}"
+  compile "io.ratpack:ratpack-guice:${ratpackVersion}"
+}
+
+

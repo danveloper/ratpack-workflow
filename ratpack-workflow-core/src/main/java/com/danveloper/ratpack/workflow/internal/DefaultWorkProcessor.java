@@ -5,6 +5,7 @@ import ratpack.exec.ExecController;
 import ratpack.exec.Execution;
 import ratpack.exec.Promise;
 import ratpack.func.Action;
+import ratpack.func.Function;
 import ratpack.registry.Registry;
 import ratpack.server.Service;
 import ratpack.server.StartEvent;
@@ -14,14 +15,17 @@ import java.util.concurrent.TimeUnit;
 
 public class DefaultWorkProcessor implements WorkProcessor {
   private final Action<WorkChain> workChainAction;
+  private final Function<Registry, WorkChain> workChainFunction;
   private final WorkStatusRepository workStatusRepository;
   private final FlowStatusRepository flowStatusRepository;
 
   private Work[] works;
   private Registry registry;
 
-  public DefaultWorkProcessor(Action<WorkChain> workChainAction, WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) {
+  public DefaultWorkProcessor(Action<WorkChain> workChainAction, Function<Registry, WorkChain> workChainFunction,
+                              WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) {
     this.workChainAction = workChainAction;
+    this.workChainFunction = workChainFunction;
     this.workStatusRepository = workStatusRepository;
     this.flowStatusRepository = flowStatusRepository;
   }
@@ -29,7 +33,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
   @Override
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
-    DefaultWorkChain chain = new DefaultWorkChain(registry);
+    WorkChain chain = workChainFunction.apply(registry);
     workChainAction.execute(chain);
     this.works = chain.getWorks().toArray(new Work[chain.getWorks().size()]);
     ExecController.require().getExecutor().scheduleAtFixedRate(new FlowSupervisor(), 0, 1, TimeUnit.SECONDS);

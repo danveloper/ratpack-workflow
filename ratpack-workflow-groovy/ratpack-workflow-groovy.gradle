@@ -1,0 +1,5 @@
+
+dependencies {
+  compile project(":ratpack-workflow-core")
+  compile "io.ratpack:ratpack-groovy:1.0.0"
+}

@@ -5,15 +5,18 @@ import com.danveloper.ratpack.workflow.WorkChain;
 import com.danveloper.ratpack.workflow.WorkProcessor;
 import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import com.danveloper.ratpack.workflow.handlers.*;
+import com.danveloper.ratpack.workflow.internal.DefaultWorkChain;
 import com.danveloper.ratpack.workflow.internal.DefaultWorkProcessor;
 import com.danveloper.ratpack.workflow.internal.InMemoryFlowStatusRepository;
 import com.danveloper.ratpack.workflow.internal.InMemoryWorkStatusRepository;
 import com.google.inject.AbstractModule;
-import com.google.inject.Provides;
 import ratpack.func.Action;
+import ratpack.func.Function;
+import ratpack.registry.Registry;
 
 public class WorkflowModule extends AbstractModule {
   private final Action<WorkChain> chain;
+  private Function<Registry, WorkChain> workChainFunction = DefaultWorkChain::new;
   private WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository();
   private FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository);
 
@@ -59,10 +62,15 @@ public class WorkflowModule extends AbstractModule {
     return this;
   }
 
+  public WorkflowModule withWorkChainFunction(Function<Registry, WorkChain> workChainFunction) {
+    this.workChainFunction = workChainFunction;
+    return this;
+  }
+
   @Override
   protected void configure() {
     bind(WorkStatusRepository.class).toInstance(workStatusRepository);
     bind(FlowStatusRepository.class).toInstance(flowStatusRepository);
-    bind(WorkProcessor.class).toInstance(new DefaultWorkProcessor(chain, workStatusRepository, flowStatusRepository));
+    bind(WorkProcessor.class).toInstance(new DefaultWorkProcessor(chain, workChainFunction, workStatusRepository, flowStatusRepository));
   }
 }

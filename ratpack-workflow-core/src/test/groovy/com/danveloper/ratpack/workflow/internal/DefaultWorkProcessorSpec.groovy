@@ -68,7 +68,7 @@ class DefaultWorkProcessorSpec extends Specification {
     }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
-    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, workStatusRepository, flowStatusRepository)
+    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, { r -> new DefaultWorkChain(r) }, workStatusRepository, flowStatusRepository)
 
     when:
     execHarness.run {
@@ -102,7 +102,7 @@ class DefaultWorkProcessorSpec extends Specification {
     }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
-    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, workStatusRepository, flowStatusRepository)
+    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, { r -> new DefaultWorkChain(r) }, workStatusRepository, flowStatusRepository)
 
     when:
     execHarness.run {

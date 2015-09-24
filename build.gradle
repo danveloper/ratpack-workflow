@@ -1,28 +1,31 @@
-apply plugin: 'groovy'
-apply plugin: 'idea'
-apply plugin: 'jacoco'
+allprojects {
+  repositories {
+    jcenter()
+  }
 
-repositories {
-  jcenter()
-}
+  apply plugin: 'idea'
+  apply plugin: 'groovy'
+  apply plugin: 'jacoco'
+ 
+  ext {
+    ratpackVersion = "1.0.0"
+  }
 
-ext {
-  ratpackVersion = "1.0.0"
-}
+  group = "com.danveloper.ratpack.workflow"
+  version = "0.1-SNAPSHOT"
 
-dependencies {
-  compile "io.ratpack:ratpack-rx:${ratpackVersion}"
-  compile "io.ratpack:ratpack-guice:${ratpackVersion}"
-  testCompile "org.codehaus.groovy:groovy-all:2.4.4"
-  testCompile "io.ratpack:ratpack-groovy-test:${ratpackVersion}"
-  testCompile 'cglib:cglib-nodep:3.1'
-  testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-}
+  dependencies {
+    testCompile "org.codehaus.groovy:groovy-all:2.4.3"
+    testCompile "io.ratpack:ratpack-groovy-test:${ratpackVersion}"
+    testCompile 'cglib:cglib-nodep:3.1'
+    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+  }
 
-jacocoTestReport {
-  reports {
-    xml.enabled false
-    csv.enabled false
-    html.destination "${buildDir}/jacocoHtml"
+  jacocoTestReport {
+    reports {
+      xml.enabled false
+      csv.enabled false
+      html.destination "${buildDir}/jacocoHtml"
+    }
   }
 }

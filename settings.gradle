@@ -1,0 +1,13 @@
+include 'ratpack-workflow-core',
+        'ratpack-workflow-groovy'
+
+def setBuildFile(project) {
+  project.buildFileName = "${project.name}.gradle"
+  project.children.each {
+    setBuildFile(it)
+  }
+}
+
+rootProject.children.each {
+  setBuildFile(it)
+}
