@@ -1,8 +1,8 @@
 package com.danveloper.ratpack.workflow.internal;
 
+import com.danveloper.ratpack.workflow.MutableWorkStatus;
 import com.danveloper.ratpack.workflow.WorkConfigSource;
 import com.danveloper.ratpack.workflow.WorkState;
-import com.danveloper.ratpack.workflow.WorkStatus;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.Lists;
 
@@ -11,7 +11,7 @@ import java.util.Random;
 import java.util.UUID;
 
 @JsonDeserialize(using = DefaultWorkStatusDeserializer.class)
-public class DefaultWorkStatus implements WorkStatus {
+public class DefaultWorkStatus implements MutableWorkStatus {
   private String id;
   private WorkConfigSource config;
   private Long startTime;
@@ -47,15 +47,15 @@ public class DefaultWorkStatus implements WorkStatus {
     this.config = config;
   }
 
-  void setStartTime(Long startTime) {
+  public void setStartTime(Long startTime) {
     this.startTime = startTime;
   }
 
-  void setEndTime(Long endTime) {
+  public void setEndTime(Long endTime) {
     this.endTime = endTime;
   }
 
-  void setState(WorkState state) {
+  public void setState(WorkState state) {
     this.state = state;
   }
 

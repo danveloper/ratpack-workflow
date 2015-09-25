@@ -178,12 +178,11 @@ public class DefaultWorkContext implements WorkContext {
             if (workStatus.getState() != WorkState.RUNNING) {
               return;
             }
-            if (workStatus instanceof DefaultWorkStatus) {
-              WorkState resultState = workConstants.completed ? WorkState.COMPLETED : WorkState.FAILED;
-              ((DefaultWorkStatus) workStatus).setEndTime(System.currentTimeMillis());
-              ((DefaultWorkStatus) workStatus).setState(resultState);
-              workStatusRepository.save(workStatus).operation().then();
-            }
+            WorkState resultState = workConstants.completed ? WorkState.COMPLETED : WorkState.FAILED;
+            MutableWorkStatus mstatus = workStatus.toMutable();
+            mstatus.setEndTime(System.currentTimeMillis());
+            mstatus.setState(resultState);
+            Execution.fork().start(e1 -> workStatusRepository.save(workStatus).operation().then());
           });
 
           Registry subregistry = Registry.of(r -> r

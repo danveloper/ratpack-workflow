@@ -1,5 +1,7 @@
 package com.danveloper.ratpack.workflow.internal.capture;
 
+import com.danveloper.ratpack.workflow.FlowStatusRepository;
+import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import com.danveloper.ratpack.workflow.server.GroovyRatpackWorkflow;
 import groovy.lang.Closure;
 import ratpack.func.Block;
@@ -13,6 +15,8 @@ public class RatpackWorkflowDslClosures {
   private Closure<?> handlers;
   private Closure<?> bindings;
   private Closure<?> serverConfig;
+  private WorkStatusRepository workRepo;
+  private Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction;
 
   public Closure<?> getHandlers() {
     return handlers;
@@ -44,6 +48,22 @@ public class RatpackWorkflowDslClosures {
 
   public void setWorkflows(Closure<?> workflows) {
     this.workflows = workflows;
+  }
+
+  public WorkStatusRepository getWorkRepo() {
+    return workRepo;
+  }
+
+  public void setWorkRepo(WorkStatusRepository workRepo) {
+    this.workRepo = workRepo;
+  }
+
+  public Function<WorkStatusRepository, FlowStatusRepository> getFlowRepoFunction() {
+    return flowRepoFunction;
+  }
+
+  public void setFlowRepoFunction(Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction) {
+    this.flowRepoFunction = flowRepoFunction;
   }
 
   public static RatpackWorkflowDslClosures capture(Function<? super RatpackWorkflowDslClosures, ? extends GroovyRatpackWorkflow.Ratpack> function, Block action) throws Exception {

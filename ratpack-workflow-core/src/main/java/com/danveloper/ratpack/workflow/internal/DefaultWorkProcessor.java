@@ -15,12 +15,14 @@ public class DefaultWorkProcessor implements WorkProcessor {
   private Work[] works;
   private Registry registry;
   private WorkChainConfig config;
+  private WorkStatusRepository workStatusRepository;
   private FlowStatusRepository flowStatusRepository;
 
   @Override
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
     config = registry.get(WorkChainConfig.class);
+    workStatusRepository = config.getWorkStatusRepository();
     flowStatusRepository = config.getFlowStatusRepositoryFunction().apply(config.getWorkStatusRepository());
     WorkChain chain = config.getWorkChainFunction().apply(registry);
     config.getAction().execute(chain);
@@ -37,7 +39,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
       throw new IllegalArgumentException("No work found for flow");
     }
 
-    DefaultFlowStatus status = (DefaultFlowStatus)flowStatus;
+    MutableFlowStatus status = flowStatus.toMutable();
     status.setState(WorkState.RUNNING);
     status.setStartTime(System.currentTimeMillis());
     return flowStatusRepository.save(status).flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
@@ -46,7 +48,12 @@ public class DefaultWorkProcessor implements WorkProcessor {
   @Override
   public Promise<String> start(WorkStatus workStatus) {
     try {
-      return DefaultWorkContext.start(works, workStatus, config.getWorkStatusRepository(), registry);
+      MutableWorkStatus mstatus = workStatus.toMutable();
+      mstatus.setStartTime(System.currentTimeMillis());
+      mstatus.setState(WorkState.RUNNING);
+      return workStatusRepository.save(mstatus).flatMap(l ->
+        DefaultWorkContext.start(works, workStatus, config.getWorkStatusRepository(), registry)
+      );
     } catch (Exception e) {
       return Promise.of(f -> f.error(e));
     }
@@ -66,9 +73,9 @@ public class DefaultWorkProcessor implements WorkProcessor {
                   .stream().filter(workStatus -> workStatus.getState() == WorkState.NOT_STARTED).findFirst();
               if (workOption.isPresent()) {
                 WorkStatus workStatus = workOption.get();
-                start(workStatus);
+                start(workStatus).operation().then();
               } else {
-                failFlow(flow);
+                completeFlow(flow);
               }
             }
           }
@@ -77,9 +84,17 @@ public class DefaultWorkProcessor implements WorkProcessor {
     }
 
     private void failFlow(FlowStatus flow) {
+      endFlow(flow, WorkState.FAILED);
+    }
+
+    private void completeFlow(FlowStatus flow) {
+      endFlow(flow, WorkState.COMPLETED);
+    }
+
+    private void endFlow(FlowStatus flow, WorkState state) {
       MutableFlowStatus mflow = flow.toMutable();
       mflow.setEndTime(System.currentTimeMillis());
-      mflow.setState(WorkState.FAILED);
+      mflow.setState(state);
       flowStatusRepository.save(mflow).operation().then();
     }
   }

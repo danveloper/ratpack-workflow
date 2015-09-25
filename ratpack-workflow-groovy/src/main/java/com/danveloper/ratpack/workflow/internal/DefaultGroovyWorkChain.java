@@ -20,7 +20,11 @@ public class DefaultGroovyWorkChain implements GroovyWorkChain {
 
   @Override
   public GroovyWorkChain work(String type, String version, @DelegatesTo(value = WorkContext.class, strategy = Closure.DELEGATE_FIRST) Closure<?> work) {
-    delegate.work(type, version, (Work)work);
+    delegate.work(type, version, ctx -> {
+      work.setDelegate(ctx);
+      work.setResolveStrategy(Closure.DELEGATE_FIRST);
+      work.call();
+    });
     return this;
   }
 

@@ -1,6 +1,8 @@
 package com.danveloper.ratpack.workflow.internal;
 
+import com.danveloper.ratpack.workflow.FlowStatusRepository;
 import com.danveloper.ratpack.workflow.GroovyWorkChain;
+import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import com.danveloper.ratpack.workflow.server.GroovyRatpackWorkflow;
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow;
 import com.danveloper.ratpack.workflow.server.RatpackWorkflowServerSpec;
@@ -8,6 +10,7 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.GroovySystem;
 import ratpack.func.Action;
+import ratpack.func.Function;
 import ratpack.groovy.Groovy;
 import ratpack.groovy.internal.ClosureUtil;
 import ratpack.groovy.internal.GroovyVersionCheck;
@@ -23,9 +26,6 @@ import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Created by danw on 9/24/15.
- */
 public class StandaloneWorkflowScriptBacking implements Action<Closure<?>> {
   private final static AtomicReference<Action<? super RatpackServer>> CAPTURE_ACTION = new AtomicReference<>(null);
   private final ThreadLocal<RatpackServer> running = new ThreadLocal<>();
@@ -44,7 +44,7 @@ public class StandaloneWorkflowScriptBacking implements Action<Closure<?>> {
     if (scriptFile == null) {
       ratpackServer = RatpackWorkflow.of(server -> ClosureUtil.configureDelegateFirst(new RatpackBacking(server), closure));
     } else {
-      ratpackServer = RatpackWorkflow.of(Groovy.Script.app(scriptFile));
+      ratpackServer = RatpackWorkflow.of(GroovyRatpackWorkflow.Script.app(scriptFile));
       Action<? super RatpackServer> action = CAPTURE_ACTION.getAndSet(null);
       if (action != null) {
         action.execute(ratpackServer);
@@ -82,6 +82,16 @@ public class StandaloneWorkflowScriptBacking implements Action<Closure<?>> {
     @Override
     public void workflow(Closure<?> configurer) {
       Exceptions.uncheck(() -> server.workflow(ClosureUtil.delegatingAction(configurer)));
+    }
+
+    @Override
+    public void workRepo(WorkStatusRepository workRepo) {
+      server.workRepo(workRepo);
+    }
+
+    @Override
+    public void flowRepo(Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction) {
+      server.flowRepo(flowRepoFunction);
     }
   }
 }

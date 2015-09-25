@@ -15,6 +15,10 @@ public interface WorkStatus {
   Throwable getError();
   List<WorkStatusMessage> getMessages();
 
+  default MutableWorkStatus toMutable() {
+    return (MutableWorkStatus)this;
+  }
+
   static WorkStatus of(String id, WorkConfigSource config) {
     return DefaultWorkStatus.of(id, config);
   }

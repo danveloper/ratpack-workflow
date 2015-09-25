@@ -14,6 +14,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ratpack.rx.RxRatpack.observe;
+import static ratpack.rx.RxRatpack.observeEach;
 import static ratpack.rx.RxRatpack.promise;
 
 public class RedisFlowStatusRepository extends RedisRepositorySupport implements FlowStatusRepository {
@@ -69,7 +70,9 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
     return Blocking.get(() ->
             exec(jedis -> {
               jedis.hset("flow:all", status.getId(), json);
-
+              status.getWorks().forEach(workStatus -> {
+                jedis.sadd("flow:works:"+status.getId(), workStatus.getId());
+              });
               if (status.getState() != WorkState.RUNNING) {
                 jedis.hdel("flow:running", status.getId());
               } else {
@@ -82,11 +85,7 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
 
   @Override
   public Promise<List<FlowStatus>> list() {
-    return Blocking.get(() ->
-      exec(jedis ->
-        jedis.hgetAll("flow:all")
-      )
-    ).map(statusMapper);
+    return list0("flow:all");
   }
 
   @Override
@@ -95,16 +94,16 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
       exec(jedis ->
         jedis.hget("flow:all", id)
       )
-    ).map(this::readFlowStatus);
+    ).map(this::readFlowStatus).flatMap(status -> getWorkStatuses(status.getId()).map(works -> {
+      MutableFlowStatus mflow = status.toMutable();
+      mflow.setWorks(works);
+      return mflow;
+    }));
   }
 
   @Override
   public Promise<List<FlowStatus>> listRunning() {
-    return Blocking.get(() ->
-      exec(jedis ->
-        jedis.hgetAll("flow:running")
-      )
-    ).map(statusMapper);
+    return list0("flow:running");
   }
 
   @Override
@@ -118,4 +117,27 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
     );
   }
 
+  private Promise<List<FlowStatus>> list0(String key) {
+    return promise(observeEach(Blocking.get(() ->
+            exec(jedis ->
+                    jedis.hgetAll(key)
+            )
+    ).map(statusMapper)).flatMap(status ->
+            observe(getWorkStatuses(status.getId())).map(works -> {
+              MutableFlowStatus mflow = status.toMutable();
+              mflow.setWorks(works);
+              return mflow;
+            })
+    ));
+  }
+
+  private Promise<List<WorkStatus>> getWorkStatuses(String flowId) {
+    return promise(observeEach(Blocking.get(() ->
+            exec(jedis ->
+                    jedis.smembers("flow:works:" + flowId)
+            )
+    )).flatMap(id ->
+            observe(workStatusRepository.get(id))
+    ));
+  }
 }

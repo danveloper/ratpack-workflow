@@ -1,10 +1,11 @@
 package com.danveloper.ratpack.workflow.server;
 
+import com.danveloper.ratpack.workflow.FlowStatusRepository;
 import com.danveloper.ratpack.workflow.GroovyWorkChain;
-import com.danveloper.ratpack.workflow.WorkChain;
+import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
-import ratpack.func.Action;
+import ratpack.func.Function;
 import ratpack.groovy.Groovy;
 import ratpack.groovy.handling.GroovyChain;
 import ratpack.groovy.internal.ClosureUtil;
@@ -28,6 +29,16 @@ public class GroovyRatpackWorkflowServerSpec extends RatpackWorkflowServerSpec {
       action.setResolveStrategy(Closure.DELEGATE_FIRST);
       action.call();
     });
+    return this;
+  }
+
+  public GroovyRatpackWorkflowServerSpec workRepo(WorkStatusRepository workRepo) {
+    super.workRepo(workRepo);
+    return this;
+  }
+
+  public GroovyRatpackWorkflowServerSpec flowRepo(Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction) {
+    super.flowRepo(flowRepoFunction);
     return this;
   }
 
