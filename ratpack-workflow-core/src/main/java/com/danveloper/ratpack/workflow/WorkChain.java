@@ -35,4 +35,8 @@ public interface WorkChain {
     configurer.execute(chain);
     return chain;
   }
+
+  static WorkChain empty() throws Exception {
+    return of(c -> {});
+  }
 }

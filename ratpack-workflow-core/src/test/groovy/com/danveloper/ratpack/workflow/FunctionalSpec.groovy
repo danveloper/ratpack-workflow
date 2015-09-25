@@ -1,9 +1,7 @@
 package com.danveloper.ratpack.workflow
 
-import com.danveloper.ratpack.workflow.guice.WorkflowModule
+import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
-import ratpack.func.Action
-import ratpack.guice.Guice
 import ratpack.test.embed.EmbeddedApp
 import spock.lang.AutoCleanup
 import spock.lang.Specification
@@ -47,27 +45,28 @@ class FunctionalSpec extends Specification {
 
   @AutoCleanup
   @Delegate
-  EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .registry(Guice.registry { b -> b
-        .module WorkflowModule.of { chain ->
-          chain.all {
-            latch.countDown()
-          }
-        }
-      })
-      .handlers { chain -> chain
-        .prefix("ops") { pchain ->
-          pchain.post(WorkflowModule.workSubmissionHandler())
-          .get(WorkflowModule.workListHandler())
-          .get(":id", WorkflowModule.workStatusGetHandler())
-        }
-        .prefix("flows") { pchain ->
-          pchain.post(WorkflowModule.flowSubmissionHandler())
-          .get(WorkflowModule.flowListHandler())
-          .get(":id", WorkflowModule.flowStatusGetHandler())
+  EmbeddedApp app = EmbeddedApp.fromServer {
+    RatpackWorkflow.of { spec -> spec
+      .workflow { chain -> chain
+        .all { ctx ->
+          latch.countDown()
+          ctx.complete()
         }
       }
-  } as Action)
+      .handlers { chain -> chain
+          .prefix("ops") { pchain ->
+            pchain.post(RatpackWorkflow.workSubmissionHandler())
+                .get(RatpackWorkflow.workListHandler())
+                .get(":id", RatpackWorkflow.workStatusGetHandler())
+          }
+          .prefix("flows") { pchain ->
+            pchain.post(RatpackWorkflow.flowSubmissionHandler())
+                .get(RatpackWorkflow.flowListHandler())
+                .get(":id", RatpackWorkflow.flowStatusGetHandler())
+          }
+      }
+    }
+  }
 
   void "should be able to submit and retrieve work"() {
     setup:

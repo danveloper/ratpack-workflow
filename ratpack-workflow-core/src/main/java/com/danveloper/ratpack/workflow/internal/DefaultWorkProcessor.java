@@ -1,40 +1,29 @@
 package com.danveloper.ratpack.workflow.internal;
 
 import com.danveloper.ratpack.workflow.*;
+import com.danveloper.ratpack.workflow.server.WorkChainConfig;
 import ratpack.exec.ExecController;
 import ratpack.exec.Execution;
 import ratpack.exec.Promise;
-import ratpack.func.Action;
-import ratpack.func.Function;
 import ratpack.registry.Registry;
-import ratpack.server.Service;
 import ratpack.server.StartEvent;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class DefaultWorkProcessor implements WorkProcessor {
-  private final Action<WorkChain> workChainAction;
-  private final Function<Registry, WorkChain> workChainFunction;
-  private final WorkStatusRepository workStatusRepository;
-  private final FlowStatusRepository flowStatusRepository;
-
   private Work[] works;
   private Registry registry;
-
-  public DefaultWorkProcessor(Action<WorkChain> workChainAction, Function<Registry, WorkChain> workChainFunction,
-                              WorkStatusRepository workStatusRepository, FlowStatusRepository flowStatusRepository) {
-    this.workChainAction = workChainAction;
-    this.workChainFunction = workChainFunction;
-    this.workStatusRepository = workStatusRepository;
-    this.flowStatusRepository = flowStatusRepository;
-  }
+  private WorkChainConfig config;
+  private FlowStatusRepository flowStatusRepository;
 
   @Override
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
-    WorkChain chain = workChainFunction.apply(registry);
-    workChainAction.execute(chain);
+    config = registry.get(WorkChainConfig.class);
+    flowStatusRepository = config.getFlowStatusRepositoryFunction().apply(config.getWorkStatusRepository());
+    WorkChain chain = config.getWorkChainFunction().apply(registry);
+    config.getAction().execute(chain);
     this.works = chain.getWorks().toArray(new Work[chain.getWorks().size()]);
     ExecController.require().getExecutor().scheduleAtFixedRate(new FlowSupervisor(), 0, 1, TimeUnit.SECONDS);
   }
@@ -57,7 +46,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
   @Override
   public Promise<String> start(WorkStatus workStatus) {
     try {
-      return DefaultWorkContext.start(works, workStatus, workStatusRepository, registry);
+      return DefaultWorkContext.start(works, workStatus, config.getWorkStatusRepository(), registry);
     } catch (Exception e) {
       return Promise.of(f -> f.error(e));
     }

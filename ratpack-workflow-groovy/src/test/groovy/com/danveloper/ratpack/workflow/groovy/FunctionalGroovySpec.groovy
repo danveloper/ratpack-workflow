@@ -1,6 +1,8 @@
-package com.danveloper.ratpack.workflow.guice
+package com.danveloper.ratpack.workflow.groovy
 
+import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.danveloper.ratpack.workflow.groovy.GroovyRatpackWorkflowEmbeddedApp
 import ratpack.func.Action
 import ratpack.guice.Guice
 import ratpack.test.embed.EmbeddedApp
@@ -26,32 +28,30 @@ class FunctionalGroovySpec extends Specification {
 
   @AutoCleanup
   @Delegate
-  EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .registry(Guice.registry { b -> b
-        .module GroovyWorkflowModule.of {
-          all {
-            latch.countDown()
-            next()
-          }
-          all {
-            latch.countDown()
-            complete()
-          }
-        }
-      })
-      .handlers { chain -> chain
-        .prefix("ops") { pchain ->
-          pchain.post(WorkflowModule.workSubmissionHandler())
-              .get(WorkflowModule.workListHandler())
-              .get(":id", WorkflowModule.workStatusGetHandler())
-        }
-        .prefix("flows") { pchain ->
-          pchain.post(WorkflowModule.flowSubmissionHandler())
-              .get(WorkflowModule.flowListHandler())
-              .get(":id", WorkflowModule.flowStatusGetHandler())
-        }
+  GroovyRatpackWorkflowEmbeddedApp app = GroovyRatpackWorkflowEmbeddedApp.of {
+    workflow {
+      all {
+        latch.countDown()
+        next()
       }
-  } as Action)
+      all {
+        latch.countDown()
+        complete()
+      }
+    }
+    handlers {
+      prefix("ops") {
+        post(RatpackWorkflow.workSubmissionHandler())
+        get(":id", RatpackWorkflow.workStatusGetHandler())
+        get(RatpackWorkflow.workListHandler())
+      }
+      prefix("flows") {
+        post(RatpackWorkflow.flowSubmissionHandler())
+        get(":id", RatpackWorkflow.flowStatusGetHandler())
+        get(RatpackWorkflow.flowListHandler())
+      }
+    }
+  }
 
   void "should be able to submit and retrieve work"() {
     setup:

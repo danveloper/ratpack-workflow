@@ -1,9 +1,11 @@
 package com.danveloper.ratpack.workflow.internal
 
 import com.danveloper.ratpack.workflow.*
+import com.danveloper.ratpack.workflow.server.WorkChainConfig
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
 import ratpack.func.Action
+import ratpack.func.Function
 import ratpack.registry.Registry
 import ratpack.server.internal.DefaultEvent
 import ratpack.test.exec.ExecHarness
@@ -68,11 +70,18 @@ class DefaultWorkProcessorSpec extends Specification {
     }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
-    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, { r -> new DefaultWorkChain(r) }, workStatusRepository, flowStatusRepository)
+    def workChainConfig = new WorkChainConfig()
+    workChainConfig.action = actChain
+    DefaultWorkProcessor processor = new DefaultWorkProcessor()
+    Registry registry = Registry.of() { r ->
+      r.add(WorkStatusRepository, workStatusRepository)
+      r.add(FlowStatusRepository, flowStatusRepository)
+      r.add(WorkChainConfig, workChainConfig)
+    }
 
     when:
     execHarness.run {
-      processor.onStart(new DefaultEvent(Registry.empty(), false))
+      processor.onStart(new DefaultEvent(registry, false))
       flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
         processor.start(flowStatus).operation().then()
       }
@@ -102,11 +111,18 @@ class DefaultWorkProcessorSpec extends Specification {
     }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
-    DefaultWorkProcessor processor = new DefaultWorkProcessor(actChain, { r -> new DefaultWorkChain(r) }, workStatusRepository, flowStatusRepository)
+    def workChainConfig = new WorkChainConfig()
+    workChainConfig.action = actChain
+    DefaultWorkProcessor processor = new DefaultWorkProcessor()
+    Registry registry = Registry.of() { r ->
+      r.add(WorkStatusRepository, workStatusRepository)
+      r.add(FlowStatusRepository, flowStatusRepository)
+      r.add(WorkChainConfig, workChainConfig)
+    }
 
     when:
     execHarness.run {
-      processor.onStart(new DefaultEvent(Registry.empty(), false))
+      processor.onStart(new DefaultEvent(registry, false))
       flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
         processor.start(flowStatus).operation().then()
       }

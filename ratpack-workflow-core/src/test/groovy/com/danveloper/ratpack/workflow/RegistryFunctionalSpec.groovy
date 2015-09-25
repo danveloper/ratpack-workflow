@@ -1,10 +1,8 @@
 package com.danveloper.ratpack.workflow
 
-import com.danveloper.ratpack.workflow.guice.WorkflowModule
-import com.danveloper.ratpack.workflow.internal.DefaultWorkStatus
 import com.danveloper.ratpack.workflow.internal.TestObject
+import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
-import ratpack.func.Action
 import ratpack.guice.Guice
 import ratpack.test.embed.EmbeddedApp
 import spock.lang.AutoCleanup
@@ -28,11 +26,11 @@ class RegistryFunctionalSpec extends Specification {
 
   @AutoCleanup
   @Delegate
-  EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .registry(Guice.registry { b -> b
-        .bindInstance(TestObject, new TestObject(foo: "bar"))
-        .module WorkflowModule.of { chain ->
-          chain.all { ctx ->
+  EmbeddedApp app = EmbeddedApp.fromServer {
+    RatpackWorkflow.of { spec -> spec
+        .registry(Guice.registry { b -> b.bindInstance(new TestObject(foo: "bar"))})
+        .workflow { chain -> chain
+          .all { ctx ->
             TestObject obj = ctx.get(TestObject)
             if (obj.foo != "bar") {
               throw new RuntimeException("!!")
@@ -41,15 +39,15 @@ class RegistryFunctionalSpec extends Specification {
             latch.countDown()
           }
         }
-      })
-      .handlers { chain -> chain
-        .prefix("ops") { pchain ->
-          pchain.post(WorkflowModule.workSubmissionHandler())
-              .get(WorkflowModule.workListHandler())
-              .get(":id", WorkflowModule.workStatusGetHandler())
+        .handlers { chain -> chain
+            .prefix("ops") { pchain ->
+              pchain.post(RatpackWorkflow.workSubmissionHandler())
+                  .get(RatpackWorkflow.workListHandler())
+                  .get(":id", RatpackWorkflow.workStatusGetHandler())
+            }
         }
-      }
-  } as Action)
+    }
+  }
 
   void "should be able to retrieve items from the registry within the work chain"() {
     setup:
