@@ -1,13 +1,13 @@
 package com.danveloper.ratpack.workflow.internal;
 
-import com.danveloper.ratpack.workflow.FlowStatus;
-import com.danveloper.ratpack.workflow.WorkState;
-import com.danveloper.ratpack.workflow.WorkStatus;
+import com.danveloper.ratpack.workflow.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 
-public class DefaultFlowStatus implements FlowStatus {
+public class DefaultFlowStatus implements MutableFlowStatus {
   private String id;
   private String name;
   private String description;
@@ -16,6 +16,20 @@ public class DefaultFlowStatus implements FlowStatus {
   private WorkState state;
   private Map<String, String> tags;
   private List<WorkStatus> works;
+
+  public static DefaultFlowStatus of(FlowConfigSource config) {
+    return of(new UUID(new Random().nextLong(), new Random().nextLong()).toString(), config);
+  }
+
+  public static DefaultFlowStatus of(String id, FlowConfigSource config) {
+    DefaultFlowStatus status = new DefaultFlowStatus();
+    status.id = id;
+    status.name = config.getName();
+    status.description = config.getDescription();
+    status.state = WorkState.NOT_STARTED;
+    status.tags = config.getTags();
+    return status;
+  }
 
   void setId(String id) {
     this.id = id;
@@ -29,15 +43,15 @@ public class DefaultFlowStatus implements FlowStatus {
     this.description = description;
   }
 
-  void setStartTime(Long time) {
+  public void setStartTime(Long time) {
     this.startTime = time;
   }
 
-  void setEndTime(Long time) {
+  public void setEndTime(Long time) {
     this.endTime = time;
   }
 
-  void setState(WorkState state) {
+  public void setState(WorkState state) {
     this.state = state;
   }
 
@@ -45,7 +59,8 @@ public class DefaultFlowStatus implements FlowStatus {
     this.tags = tags;
   }
 
-  void setWorks(List<WorkStatus> works) {
+  @Override
+  public void setWorks(List<WorkStatus> works) {
     this.works = works;
   }
 

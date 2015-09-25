@@ -77,10 +77,10 @@ public class DefaultWorkProcessor implements WorkProcessor {
     }
 
     private void failFlow(FlowStatus flow) {
-      DefaultFlowStatus dflow = (DefaultFlowStatus)flow;
-      dflow.setEndTime(System.currentTimeMillis());
-      dflow.setState(WorkState.FAILED);
-      flowStatusRepository.save(dflow).operation().then();
+      MutableFlowStatus mflow = flow.toMutable();
+      mflow.setEndTime(System.currentTimeMillis());
+      mflow.setState(WorkState.FAILED);
+      flowStatusRepository.save(mflow).operation().then();
     }
   }
 }

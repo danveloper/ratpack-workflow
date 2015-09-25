@@ -3,13 +3,11 @@ package com.danveloper.ratpack.workflow.internal;
 import com.danveloper.ratpack.workflow.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import ratpack.exec.Promise;
 import rx.Observable;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static ratpack.rx.RxRatpack.observe;
@@ -17,6 +15,7 @@ import static ratpack.rx.RxRatpack.promiseSingle;
 
 public class InMemoryFlowStatusRepository implements FlowStatusRepository {
   private final Map<String, FlowStatus> storage = Maps.newConcurrentMap();
+  private final Map<String, Set<String>> tagStorage = Maps.newConcurrentMap();
 
   private final WorkStatusRepository workStatusRepository;
 
@@ -41,6 +40,13 @@ public class InMemoryFlowStatusRepository implements FlowStatusRepository {
     Observable<DefaultFlowStatus> zippedStatus = Observable.zip(statusObs, workStatusesObs, (status, workStatuses) -> {
       status.setWorks(workStatuses);
       storage.put(status.getId(), status);
+      status.getTags().forEach((key, val) -> {
+        String storageKey = "tags:"+key+":"+val;
+        if (!tagStorage.containsKey(storageKey)) {
+          tagStorage.put(storageKey, Sets.newConcurrentHashSet());
+        }
+        tagStorage.get(storageKey).add(status.getId());
+      });
       return status;
     });
 
@@ -71,5 +77,17 @@ public class InMemoryFlowStatusRepository implements FlowStatusRepository {
     List<FlowStatus> flows = storage.values().stream()
         .filter(st -> st.getState() == WorkState.RUNNING).collect(Collectors.toList());
     return Promise.value(flows);
+  }
+
+  @Override
+  public Promise<List<FlowStatus>> findByTag(String key, String value) {
+    String storageKey = "tags:"+key+":"+value;
+    if (!tagStorage.containsKey(storageKey)) {
+      return Promise.value(Lists.newArrayList());
+    } else {
+      Set<String> ids = tagStorage.get(storageKey);
+      List<FlowStatus> taggedStatuses = ids.stream().map(storage::get).collect(Collectors.toList());
+      return Promise.value(taggedStatuses);
+    }
   }
 }

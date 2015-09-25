@@ -1,5 +1,6 @@
 package com.danveloper.ratpack.workflow;
 
+import com.danveloper.ratpack.workflow.internal.DefaultWorkStatus;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 import java.util.List;
@@ -13,6 +14,14 @@ public interface WorkStatus {
   WorkState getState();
   Throwable getError();
   List<WorkStatusMessage> getMessages();
+
+  static WorkStatus of(String id, WorkConfigSource config) {
+    return DefaultWorkStatus.of(id, config);
+  }
+
+  static WorkStatus of(WorkConfigSource config) {
+    return DefaultWorkStatus.of(config);
+  }
 
   class WorkStatusMessage {
     private Long time;

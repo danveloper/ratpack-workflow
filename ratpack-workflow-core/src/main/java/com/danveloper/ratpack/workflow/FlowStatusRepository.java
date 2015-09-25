@@ -10,4 +10,5 @@ public interface FlowStatusRepository {
   Promise<List<FlowStatus>> list();
   Promise<FlowStatus> get(String id);
   Promise<List<FlowStatus>> listRunning();
+  Promise<List<FlowStatus>> findByTag(String key, String value);
 }

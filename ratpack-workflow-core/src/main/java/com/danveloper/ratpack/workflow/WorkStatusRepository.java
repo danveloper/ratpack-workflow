@@ -12,5 +12,7 @@ public interface WorkStatusRepository {
 
   Promise<List<WorkStatus>> list();
 
+  Promise<List<WorkStatus>> listRunning();
+
   Promise<WorkStatus> get(String id);
 }

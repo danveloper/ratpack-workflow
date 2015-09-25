@@ -2,10 +2,6 @@ package com.danveloper.ratpack.workflow.groovy
 
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.danveloper.ratpack.workflow.groovy.GroovyRatpackWorkflowEmbeddedApp
-import ratpack.func.Action
-import ratpack.guice.Guice
-import ratpack.test.embed.EmbeddedApp
 import spock.lang.AutoCleanup
 import spock.lang.Specification
 

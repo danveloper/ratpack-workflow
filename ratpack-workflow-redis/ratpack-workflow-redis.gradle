@@ -1,0 +1,9 @@
+repositories {
+  maven { url "http://clojars.org/repo" }
+}
+
+dependencies {
+  compile project(":ratpack-workflow-core")
+  compile 'redis.clients:jedis:2.7.3'
+  testCompile 'redis.embedded:embedded-redis:0.5'
+}

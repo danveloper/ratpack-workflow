@@ -24,7 +24,7 @@ public class WorkSubmissionHandler implements Handler {
               .build()
       );
       return workStatusRepository.create(WorkConfigSource.of(configData));
-    }).flatMap(workStatus -> workProcessor.start(workStatus))
+    }).flatMap(workProcessor::start)
       .then(id -> {
         ctx.getResponse().status(202);
         ctx.render(json(new HashMap<String, String>() {{

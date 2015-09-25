@@ -45,7 +45,7 @@ public abstract class GroovyRatpackWorkflow {
   public static RatpackServer of(@DelegatesTo(value = GroovyRatpackWorkflowServerSpec.class, strategy = Closure.DELEGATE_FIRST) Closure<?> configurer) throws Exception {
     final RatpackWorkflow.RegistryHolder holder = new RatpackWorkflow.RegistryHolder();
     RatpackServer server =  RatpackServer.of(d -> {
-      GroovyRatpackWorkflowServerSpec spec = new GroovyRatpackWorkflowServerSpec(d);
+      GroovyRatpackWorkflowServerSpec spec = new GroovyRatpackWorkflowServerSpec((RatpackServerSpec)d);
       configurer.setDelegate(spec);
       configurer.setResolveStrategy(Closure.DELEGATE_FIRST);
       configurer.call();

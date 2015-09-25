@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class InMemoryWorkStatusRepository implements WorkStatusRepository {
   private final Map<String, WorkStatus> storage = Maps.newConcurrentMap();
@@ -44,6 +45,13 @@ public class InMemoryWorkStatusRepository implements WorkStatusRepository {
   @Override
   public Promise<List<WorkStatus>> list() {
     return Promise.value(Lists.newArrayList(storage.values()));
+  }
+
+  @Override
+  public Promise<List<WorkStatus>> listRunning() {
+    List<WorkStatus> works = storage.values().stream()
+        .filter(st -> st.getState() == WorkState.RUNNING).collect(Collectors.toList());
+    return Promise.value(works);
   }
 
   @Override

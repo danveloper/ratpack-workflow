@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.collect.Lists;
 
 import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 
 @JsonDeserialize(using = DefaultWorkStatusDeserializer.class)
 public class DefaultWorkStatus implements WorkStatus {
@@ -20,6 +22,21 @@ public class DefaultWorkStatus implements WorkStatus {
 
   DefaultWorkStatus() {
     this.messages = Lists.newArrayList();
+  }
+
+  public static DefaultWorkStatus of(WorkConfigSource config) {
+    String id = new UUID(new Random().nextLong(), new Random().nextLong()).toString();
+    return of(id, config);
+  }
+
+  public static DefaultWorkStatus of(String id, WorkConfigSource config) {
+    DefaultWorkStatus status = new DefaultWorkStatus();
+    status.setId(id);
+    status.setConfig(config);
+    status.setState(WorkState.NOT_STARTED);
+    status.setMessages(Lists.newArrayList());
+
+    return status;
   }
 
   void setId(String id) {

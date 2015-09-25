@@ -4,6 +4,7 @@ import com.danveloper.ratpack.workflow.handlers.*;
 import ratpack.func.Action;
 import ratpack.registry.Registry;
 import ratpack.server.RatpackServer;
+import ratpack.server.RatpackServerSpec;
 import ratpack.server.internal.ServerCapturer;
 
 public interface RatpackWorkflow {
@@ -15,7 +16,7 @@ public interface RatpackWorkflow {
   static RatpackServer of(Action<? super RatpackWorkflowServerSpec> definition) throws Exception {
     final RegistryHolder holder = new RegistryHolder();
     RatpackServer server =  RatpackServer.of(d -> {
-      RatpackWorkflowServerSpec spec = new RatpackWorkflowServerSpec(d);
+      RatpackWorkflowServerSpec spec = new RatpackWorkflowServerSpec((RatpackServerSpec)d);
       definition.execute(spec);
       holder.overrides = spec.getRegistry();
     });
