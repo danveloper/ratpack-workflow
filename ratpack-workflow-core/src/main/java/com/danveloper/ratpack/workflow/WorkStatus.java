@@ -12,7 +12,7 @@ public interface WorkStatus {
   Long getStartTime();
   Long getEndTime();
   WorkState getState();
-  Throwable getError();
+  String getError();
   List<WorkStatusMessage> getMessages();
 
   default MutableWorkStatus toMutable() {

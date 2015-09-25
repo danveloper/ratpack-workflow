@@ -3,7 +3,6 @@ package com.danveloper.ratpack.workflow.internal;
 import com.danveloper.ratpack.workflow.WorkConfigSource;
 import com.danveloper.ratpack.workflow.WorkState;
 import com.danveloper.ratpack.workflow.WorkStatus;
-import com.danveloper.ratpack.workflow.internal.DefaultWorkStatus;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -38,11 +37,13 @@ public class DefaultWorkStatusDeserializer extends JsonDeserializer<DefaultWorkS
     } catch (Exception e) {
       throw new RuntimeException("Unable to deserialize WorkConfigData", e);
     }
+    String error = node.get("error").isNull() ? null : node.get("error").toString();
     DefaultWorkStatus status = new DefaultWorkStatus();
     status.setId(id);
     status.setStartTime(startTime);
     status.setEndTime(endTime);
     status.setState(state);
+    status.setError(error);
     status.setMessages(messages);
     status.setConfig(data != null ? WorkConfigSource.of(data) : null);
 

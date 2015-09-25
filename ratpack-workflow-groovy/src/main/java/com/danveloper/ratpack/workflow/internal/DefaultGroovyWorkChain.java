@@ -42,7 +42,11 @@ public class DefaultGroovyWorkChain implements GroovyWorkChain {
 
   @Override
   public GroovyWorkChain flow(String type, String version, @DelegatesTo(value = GroovyWorkChain.class, strategy = Closure.DELEGATE_FIRST) Closure<?> subchain) throws Exception {
-    delegate.flow(type, version, (Action<WorkChain>)subchain);
+    delegate.flow(type, version, wc -> {
+      subchain.setDelegate(new DefaultGroovyWorkChain(wc));
+      subchain.setResolveStrategy(Closure.DELEGATE_FIRST);
+      subchain.call();
+    });
     return this;
   }
 

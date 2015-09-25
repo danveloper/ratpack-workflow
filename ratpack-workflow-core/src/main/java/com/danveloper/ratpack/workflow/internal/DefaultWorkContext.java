@@ -9,6 +9,8 @@ import ratpack.exec.Execution;
 import ratpack.exec.Promise;
 import ratpack.registry.Registry;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.Optional;
@@ -122,13 +124,10 @@ public class DefaultWorkContext implements WorkContext {
   @Override
   public void fail(Throwable t) {
     WorkStatus status = registry.get(WorkStatus.class);
-    if (status instanceof DefaultWorkStatus) {
-      ((DefaultWorkStatus)status).setError(t);
-      ((DefaultWorkStatus)status).setState(WorkState.FAILED);
-      ((DefaultWorkStatus)status).setEndTime(System.currentTimeMillis());
-    } else {
-      throw new IllegalStateException("cannot update status", t);
-    }
+    MutableWorkStatus mstatus = status.toMutable();
+    mstatus.setError(exceptionToString(t));
+    mstatus.setState(WorkState.FAILED);
+    mstatus.setEndTime(System.currentTimeMillis());
   }
 
   @Override
@@ -175,9 +174,6 @@ public class DefaultWorkContext implements WorkContext {
           workConstants.eventLoop = e.getEventLoop();
 
           e.onComplete(() -> {
-            if (workStatus.getState() != WorkState.RUNNING) {
-              return;
-            }
             WorkState resultState = workConstants.completed ? WorkState.COMPLETED : WorkState.FAILED;
             MutableWorkStatus mstatus = workStatus.toMutable();
             mstatus.setEndTime(System.currentTimeMillis());
@@ -209,6 +205,12 @@ public class DefaultWorkContext implements WorkContext {
   DefaultWorkContext(WorkConstants workConstants, Registry registry) {
     this.workConstants = workConstants;
     this.registry = registry;
+  }
+
+  private static String exceptionToString(Throwable e) {
+    StringWriter sw = new StringWriter();
+    e.printStackTrace(new PrintWriter(sw));
+    return sw.toString();
   }
 
   private Registry getContextRegistry() {

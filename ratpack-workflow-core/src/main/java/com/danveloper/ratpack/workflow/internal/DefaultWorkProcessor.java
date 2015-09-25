@@ -62,7 +62,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
   private class FlowSupervisor implements Runnable {
 
     public void run() {
-      Execution.fork().start(e -> {
+      Execution.fork().start(e ->
         flowStatusRepository.listRunning().then(flows -> {
           for (FlowStatus flow : flows) {
             boolean workFailed = flow.getWorks().stream().anyMatch(st -> st.getState() == WorkState.FAILED);
@@ -73,14 +73,23 @@ public class DefaultWorkProcessor implements WorkProcessor {
                   .stream().filter(workStatus -> workStatus.getState() == WorkState.NOT_STARTED).findFirst();
               if (workOption.isPresent()) {
                 WorkStatus workStatus = workOption.get();
-                start(workStatus).operation().then();
+                workStatusRepository.lock(workStatus.getId()).then(locked -> {
+                  if (locked) {
+                    start(workStatus).flatMap(l -> workStatusRepository.unlock(workStatus.getId())).operation().then();
+                  }
+                });
               } else {
-                completeFlow(flow);
+                Optional<WorkStatus> workOption2 = flow.getWorks()
+                    .stream().filter(workStatus -> workStatus.getState() == WorkState.RUNNING).findFirst();
+                boolean stillRunning = workOption2.isPresent();
+                if (!stillRunning) {
+                  completeFlow(flow);
+                }
               }
             }
           }
-        });
-      });
+        })
+      );
     }
 
     private void failFlow(FlowStatus flow) {

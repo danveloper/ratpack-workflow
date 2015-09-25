@@ -12,6 +12,7 @@ public interface GroovyWorkChain extends WorkChain {
   default GroovyWorkChain all(@DelegatesTo(value = WorkContext.class, strategy = Closure.DELEGATE_FIRST) Closure<?> work) {
     Work w = ctx -> {
       work.setDelegate(ctx);
+      work.setResolveStrategy(Closure.DELEGATE_FIRST);
       work.call();
     };
     return all(w);

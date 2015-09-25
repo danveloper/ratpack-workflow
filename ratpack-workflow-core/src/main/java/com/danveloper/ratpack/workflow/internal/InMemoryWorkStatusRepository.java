@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 public class InMemoryWorkStatusRepository implements WorkStatusRepository {
   private final Map<String, WorkStatus> storage = Maps.newConcurrentMap();
+  private final Map<String, Boolean> locks = Maps.newConcurrentMap();
 
   @Override
   public Promise<WorkStatus> create(WorkConfigSource source) {
@@ -60,5 +61,18 @@ public class InMemoryWorkStatusRepository implements WorkStatusRepository {
       throw new IllegalArgumentException("id cannot be null");
     }
     return Promise.value(storage.get(id));
+  }
+
+  @Override
+  public Promise<Boolean> lock(String id) {
+    return Promise.value(locks.containsKey(id) ? Boolean.FALSE : locks.put(id, Boolean.TRUE));
+  }
+
+  @Override
+  public Promise<Boolean> unlock(String id) {
+    if (locks.containsKey(id)) {
+      locks.remove(id);
+    }
+    return Promise.value(Boolean.TRUE);
   }
 }

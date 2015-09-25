@@ -17,7 +17,7 @@ public class DefaultWorkStatus implements MutableWorkStatus {
   private Long startTime;
   private Long endTime;
   private WorkState state;
-  private Throwable error;
+  private String error;
   private List<WorkStatusMessage> messages;
 
   DefaultWorkStatus() {
@@ -59,7 +59,7 @@ public class DefaultWorkStatus implements MutableWorkStatus {
     this.state = state;
   }
 
-  void setError(Throwable error) {
+  public void setError(String error) {
     this.error = error;
   }
 
@@ -93,7 +93,7 @@ public class DefaultWorkStatus implements MutableWorkStatus {
   }
 
   @Override
-  public Throwable getError() {
+  public String getError() {
     return this.error;
   }
 

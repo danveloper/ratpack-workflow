@@ -78,4 +78,33 @@ public class RedisWorkStatusRepository extends RedisRepositorySupport implements
     ).map(this::readWorkStatus);
   }
 
+  @Override
+  public Promise<Boolean> lock(String id) {
+    return Blocking.get(() ->
+      exec(jedis -> {
+        String key = "lock:"+id;
+        if (jedis.exists(key)) {
+          return false;
+        } else {
+          return Boolean.parseBoolean(jedis.getSet(key, "true"));
+        }
+      })
+    );
+  }
+
+  @Override
+  public Promise<Boolean> unlock(String id) {
+    return Blocking.get(() ->
+      exec(jedis -> {
+        String key = "lock:"+id;
+        if (jedis.exists(key)) {
+          jedis.del(key);
+          return !jedis.exists(key);
+        } else {
+          return true;
+        }
+      })
+    );
+  }
+
 }

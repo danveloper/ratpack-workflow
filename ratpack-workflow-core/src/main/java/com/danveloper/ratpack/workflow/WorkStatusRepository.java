@@ -15,4 +15,8 @@ public interface WorkStatusRepository {
   Promise<List<WorkStatus>> listRunning();
 
   Promise<WorkStatus> get(String id);
+
+  Promise<Boolean> lock(String id);
+
+  Promise<Boolean> unlock(String id);
 }

@@ -30,4 +30,14 @@ class StubWorkRepo implements WorkStatusRepository {
   Promise<WorkStatus> get(String id) {
     return null
   }
+
+  @Override
+  Promise<Boolean> lock(String id) {
+    return null
+  }
+
+  @Override
+  Promise<Boolean> unlock(String id) {
+    return null
+  }
 }
