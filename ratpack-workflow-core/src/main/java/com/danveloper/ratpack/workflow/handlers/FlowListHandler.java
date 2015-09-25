@@ -10,8 +10,8 @@ public class FlowListHandler implements Handler {
   @Override
   public void handle(Context ctx) throws Exception {
     FlowStatusRepository flowStatusRepository = ctx.get(FlowStatusRepository.class);
-    flowStatusRepository.list().then(flows -> {
-      ctx.render(json(flows));
-    });
+    flowStatusRepository.list().then(flows ->
+      ctx.render(json(flows))
+    );
   }
 }
