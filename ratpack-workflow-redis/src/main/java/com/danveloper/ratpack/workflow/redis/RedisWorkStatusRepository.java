@@ -76,7 +76,7 @@ public class RedisWorkStatusRepository extends RedisRepositorySupport implements
                 workStatuses = jedis.hmget("work:all", ids.toArray(new String[ids.size()]))
                     .stream().map(this::readWorkStatus).collect(Collectors.toList());
               }
-              return new Page<>(offset, limit, (int) Math.ceil(maxRecords / limit), workStatuses);
+              return new Page<>(offset, limit, (int) Math.max(1, Math.ceil(maxRecords / limit)), workStatuses);
             })
     );
   }

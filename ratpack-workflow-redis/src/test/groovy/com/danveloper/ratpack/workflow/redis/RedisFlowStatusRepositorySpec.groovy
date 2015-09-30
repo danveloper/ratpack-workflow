@@ -210,4 +210,22 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
     ids.findAll { ids2.contains(it) }.size() == 0
     ids2 == reversed[10..19]*.id
   }
+
+  void "num pages should be 1 when max records is lt limit"() {
+    setup:
+      ExecHarness.yieldSingle {
+        repo.create(config)
+      }.value
+
+    when:
+    def page = ExecHarness.yieldSingle {
+      repo.list(0, 10)
+    }.valueOrThrow
+
+    then:
+    page.offset == 0
+    page.limit == 10
+    page.numPages == 1
+    page.objs.size() == 1
+  }
 }

@@ -120,7 +120,7 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
                     .stream().map(this::readFlowStatus).map(this::blockingHydrateWorkStatuses)
                     .collect(Collectors.toList());
               }
-              return new Page<>(offset, limit, (int) Math.ceil(maxRecords / limit), flowStatuses);
+              return new Page<>(offset, limit, (int) Math.max(1, Math.ceil(maxRecords / limit)), flowStatuses);
             })
     );
   }
