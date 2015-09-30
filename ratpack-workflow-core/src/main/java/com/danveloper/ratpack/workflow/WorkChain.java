@@ -11,6 +11,8 @@ public interface WorkChain {
     return work("", work::handle);
   }
 
+  WorkChain all(Class<? extends Work> work);
+
   default WorkChain work(String type, Work work) {
     return work(type, "", work);
   }

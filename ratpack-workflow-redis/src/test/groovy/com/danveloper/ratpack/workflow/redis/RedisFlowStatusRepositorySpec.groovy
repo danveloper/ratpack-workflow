@@ -34,6 +34,10 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
   def d = ConfigData.of { d -> d.json(ByteSource.wrap(flowJson.bytes)) }
   def config = FlowConfigSource.of(d)
 
+  def cleanup() {
+    jedisPool.resource.flushAll()
+  }
+
   void "should create FlowStatus objects"() {
     given:
     def status = execControl.yield { repo.create(config) }.valueOrThrow
@@ -71,7 +75,10 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
     def status = execControl.yield { repo.create(config) }.valueOrThrow
 
     and:
-    def statuses = execControl.yield { repo.list() }.valueOrThrow
+    def page = execControl.yield { repo.list(0, 10) }.valueOrThrow
+
+    and:
+    def statuses = page.objs
 
     then:
     1 == statuses.size()
@@ -92,7 +99,10 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
     status = execControl.yield { repo.save(status) }.valueOrThrow
 
     and:
-    def statuses = execControl.yield { repo.listRunning() }.valueOrThrow
+    def page = execControl.yield { repo.listRunning(0, 10) }.valueOrThrow
+
+    and:
+    def statuses = page.objs
 
     then:
     1 == statuses.size()
@@ -105,7 +115,10 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
     status = execControl.yield { repo.save(status) }.valueOrThrow
 
     and:
-    statuses = execControl.yield { repo.listRunning() }.valueOrThrow
+    page = execControl.yield { repo.listRunning(0, 10) }.valueOrThrow
+
+    and:
+    statuses = page.objs
 
     then:
     0 == statuses.size()
@@ -130,8 +143,8 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
 
     when:
     def statuses = ExecHarness.yieldSingle {
-      repo.findByTag("stack", "prod")
-    }.valueOrThrow
+      repo.findByTag(0, 10, "stack", "prod")
+    }.valueOrThrow.objs
 
     then:
     1 == statuses.size()
@@ -139,8 +152,8 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
 
     when:
     statuses = ExecHarness.yieldSingle {
-      repo.findByTag("phase", "build")
-    }.valueOrThrow
+      repo.findByTag(0, 10, "phase", "build")
+    }.valueOrThrow.objs
 
     then:
     1 == statuses.size()
@@ -148,10 +161,53 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
 
     when:
     statuses = ExecHarness.yieldSingle {
-      repo.findByTag("nothing", "")
-    }.valueOrThrow
+      repo.findByTag(0, 10, "nothing", "")
+    }.valueOrThrow.objs
 
     then:
     0 == statuses.size()
+  }
+
+  void "should properly page FlowStatuses"() {
+    setup:
+    def statuses = (1..30).collect {
+      ExecHarness.yieldSingle {
+        repo.create(config)
+      }.value
+    }
+    def reversed = statuses.reverse()
+
+    when:
+    def page = ExecHarness.yieldSingle {
+      repo.list(0, 10)
+    }.valueOrThrow
+
+    and:
+    def ids = page.objs*.id
+
+    then:
+    page.offset == 0
+    page.limit == 10
+    page.numPages == 3
+    page.objs.size() == 10
+    statuses.containsAll(page.objs)
+    ids == reversed[0..9]*.id
+
+    when:
+    def page2 = ExecHarness.yieldSingle {
+      repo.list(1, 10)
+    }.valueOrThrow
+
+    and:
+    def ids2 = page2.objs*.id
+
+    then:
+    page2.offset == 1
+    page2.limit == 10
+    page2.numPages == 3
+    page2.objs.size() == 10
+    statuses.containsAll(page2.objs)
+    ids.findAll { ids2.contains(it) }.size() == 0
+    ids2 == reversed[10..19]*.id
   }
 }

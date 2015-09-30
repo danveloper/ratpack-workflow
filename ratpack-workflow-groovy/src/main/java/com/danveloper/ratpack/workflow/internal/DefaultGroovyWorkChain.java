@@ -29,6 +29,12 @@ public class DefaultGroovyWorkChain implements GroovyWorkChain {
   }
 
   @Override
+  public WorkChain all(Class<? extends Work> work) {
+    delegate.all(work);
+    return this;
+  }
+
+  @Override
   public WorkChain work(String type, String version, Work work) {
     delegate.work(type, version, work);
     return this;

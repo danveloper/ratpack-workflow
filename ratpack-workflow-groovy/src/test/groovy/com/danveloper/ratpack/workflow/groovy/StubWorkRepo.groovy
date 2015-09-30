@@ -1,5 +1,6 @@
 package com.danveloper.ratpack.workflow.groovy
 
+import com.danveloper.ratpack.workflow.Page
 import com.danveloper.ratpack.workflow.WorkConfigSource
 import com.danveloper.ratpack.workflow.WorkStatus
 import com.danveloper.ratpack.workflow.WorkStatusRepository
@@ -17,12 +18,12 @@ class StubWorkRepo implements WorkStatusRepository {
   }
 
   @Override
-  Promise<List<WorkStatus>> list() {
+  Promise<Page<WorkStatus>> list(Integer offset, Integer limit) {
     return null
   }
 
   @Override
-  Promise<List<WorkStatus>> listRunning() {
+  Promise<Page<WorkStatus>> listRunning(Integer offset, Integer limit) {
     return null
   }
 

@@ -7,8 +7,8 @@ import java.util.List;
 public interface FlowStatusRepository {
   Promise<FlowStatus> create(FlowConfigSource config);
   Promise<FlowStatus> save(FlowStatus status);
-  Promise<List<FlowStatus>> list();
   Promise<FlowStatus> get(String id);
-  Promise<List<FlowStatus>> listRunning();
-  Promise<List<FlowStatus>> findByTag(String key, String value);
+  Promise<Page<FlowStatus>> list(Integer offset, Integer limit);
+  Promise<Page<FlowStatus>> listRunning(Integer offset, Integer limit);
+  Promise<Page<FlowStatus>> findByTag(Integer offset, Integer limit, String key, String value);
 }

@@ -28,6 +28,7 @@ class RegistryFunctionalSpec extends Specification {
   @Delegate
   EmbeddedApp app = EmbeddedApp.fromServer {
     RatpackWorkflow.of { spec -> spec
+        .serverConfig { s -> s.port(0) }
         .registry(Guice.registry { b -> b.bindInstance(new TestObject(foo: "bar"))})
         .workflow { chain -> chain
           .all { ctx ->

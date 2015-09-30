@@ -63,31 +63,41 @@ public class InMemoryFlowStatusRepository implements FlowStatusRepository {
   }
 
   @Override
-  public Promise<List<FlowStatus>> list() {
-    return Promise.value(Lists.newArrayList(storage.values()));
-  }
-
-  @Override
   public Promise<FlowStatus> get(String id) {
     return Promise.value(storage.get(id));
   }
 
   @Override
-  public Promise<List<FlowStatus>> listRunning() {
-    List<FlowStatus> flows = storage.values().stream()
-        .filter(st -> st.getState() == WorkState.RUNNING).collect(Collectors.toList());
-    return Promise.value(flows);
+  public Promise<Page<FlowStatus>> list(Integer offset, Integer limit) {
+    Integer startIdx = limit * offset;
+    Integer endIdx = limit + startIdx;
+    List<FlowStatus> flows = Lists.newArrayList(storage.values()).subList(startIdx, endIdx > storage.size() ? storage.size() : endIdx);
+    return Promise.value(new Page<>(offset, limit, (int)Math.ceil(storage.size() / limit), flows));
   }
 
   @Override
-  public Promise<List<FlowStatus>> findByTag(String key, String value) {
+  public Promise<Page<FlowStatus>> listRunning(Integer offset, Integer limit) {
+    Integer startIdx = limit * offset;
+    Integer endIdx = limit + startIdx;
+    List<FlowStatus> flows = storage.values().stream()
+        .filter(st -> st.getState() == WorkState.RUNNING).collect(Collectors.toList());
+    List<FlowStatus> values = flows.subList(startIdx, endIdx > flows.size() ? flows.size() : endIdx);
+    return Promise.value(new Page<>(offset, limit, (int)Math.ceil(flows.size() / limit), values));
+  }
+
+  @Override
+  public Promise<Page<FlowStatus>> findByTag(Integer offset, Integer limit, String key, String value) {
     String storageKey = "tags:"+key+":"+value;
     if (!tagStorage.containsKey(storageKey)) {
-      return Promise.value(Lists.newArrayList());
+      return Promise.value(new Page<>(offset, limit, 0, Lists.newArrayList()));
     } else {
+      Integer startIdx = limit * offset;
+      Integer endIdx = limit + startIdx;
+
       Set<String> ids = tagStorage.get(storageKey);
       List<FlowStatus> taggedStatuses = ids.stream().map(storage::get).collect(Collectors.toList());
-      return Promise.value(taggedStatuses);
+      List<FlowStatus> values = taggedStatuses.subList(startIdx, endIdx > taggedStatuses.size() ? taggedStatuses.size() : endIdx);
+      return Promise.value(new Page<>(offset, limit, (int)Math.ceil(taggedStatuses.size() / limit), values));
     }
   }
 }

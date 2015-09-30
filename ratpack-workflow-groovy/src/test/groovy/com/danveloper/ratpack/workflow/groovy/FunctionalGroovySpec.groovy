@@ -25,6 +25,9 @@ class FunctionalGroovySpec extends Specification {
   @AutoCleanup
   @Delegate
   GroovyRatpackWorkflowEmbeddedApp app = GroovyRatpackWorkflowEmbeddedApp.of {
+    serverConfig {
+      port 0
+    }
     workflow {
       all {
         latch.countDown()

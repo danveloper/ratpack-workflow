@@ -5,8 +5,9 @@ import com.danveloper.ratpack.workflow.WorkProcessor
 import com.danveloper.ratpack.workflow.WorkStatus
 import com.danveloper.ratpack.workflow.WorkStatusRepository
 import com.danveloper.ratpack.workflow.internal.DefaultWorkStatus
+import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import ratpack.exec.Promise
-import ratpack.func.Action
+import ratpack.registry.Registry
 import ratpack.test.embed.EmbeddedApp
 import spock.lang.AutoCleanup
 import spock.lang.Specification
@@ -27,15 +28,16 @@ class WorkSubmissionHandlerSpec extends Specification {
 
   @AutoCleanup
   @Delegate
-  EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .registryOf { r ->
-    r.add(WorkStatusRepository, repo)
-    r.add(WorkProcessor, workProcessor)
+  EmbeddedApp app = EmbeddedApp.fromServer {
+    RatpackWorkflow.of { spec ->
+      spec
+          .workRepo(repo)
+          .serverConfig { d -> d.port(0) }
+          .handlers { chain ->
+        chain.register(Registry.single(WorkProcessor, workProcessor)).post(new WorkSubmissionHandler())
+      }
+    }
   }
-  .handlers { chain ->
-    chain.post(new WorkSubmissionHandler())
-  }
-  } as Action)
 
   void "should form a WorkConfigSource and submit for processing"() {
     setup:

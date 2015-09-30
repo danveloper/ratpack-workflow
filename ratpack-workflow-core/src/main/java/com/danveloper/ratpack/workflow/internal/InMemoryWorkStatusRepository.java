@@ -1,9 +1,6 @@
 package com.danveloper.ratpack.workflow.internal;
 
-import com.danveloper.ratpack.workflow.WorkConfigSource;
-import com.danveloper.ratpack.workflow.WorkState;
-import com.danveloper.ratpack.workflow.WorkStatus;
-import com.danveloper.ratpack.workflow.WorkStatusRepository;
+import com.danveloper.ratpack.workflow.*;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import ratpack.exec.Promise;
@@ -44,15 +41,21 @@ public class InMemoryWorkStatusRepository implements WorkStatusRepository {
   }
 
   @Override
-  public Promise<List<WorkStatus>> list() {
-    return Promise.value(Lists.newArrayList(storage.values()));
+  public Promise<Page<WorkStatus>> list(Integer offset, Integer limit) {
+    Integer startIdx = limit * offset;
+    Integer endIdx = limit + startIdx;
+    List<WorkStatus> values = Lists.newArrayList(storage.values()).subList(startIdx, endIdx > storage.size() ? storage.size() : endIdx);
+    return Promise.value(new Page<>(offset, limit, (int)Math.ceil(storage.size() / limit), values));
   }
 
   @Override
-  public Promise<List<WorkStatus>> listRunning() {
+  public Promise<Page<WorkStatus>> listRunning(Integer offset, Integer limit) {
+    Integer startIdx = limit * offset;
+    Integer endIdx = limit + startIdx;
     List<WorkStatus> works = storage.values().stream()
         .filter(st -> st.getState() == WorkState.RUNNING).collect(Collectors.toList());
-    return Promise.value(works);
+    List<WorkStatus> values = works.subList(startIdx, endIdx > works.size() ? works.size() : endIdx);
+    return Promise.value(new Page<>(offset, limit, (int)Math.ceil(works.size() / limit), values));
   }
 
   @Override
@@ -65,7 +68,12 @@ public class InMemoryWorkStatusRepository implements WorkStatusRepository {
 
   @Override
   public Promise<Boolean> lock(String id) {
-    return Promise.value(locks.containsKey(id) ? Boolean.FALSE : locks.put(id, Boolean.TRUE));
+    if (locks.containsKey(id)) {
+      return Promise.value(Boolean.FALSE);
+    } else {
+      locks.put(id, Boolean.TRUE);
+      return Promise.value(Boolean.TRUE);
+    }
   }
 
   @Override

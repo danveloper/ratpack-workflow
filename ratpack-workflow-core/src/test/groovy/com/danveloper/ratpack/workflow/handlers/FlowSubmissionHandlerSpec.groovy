@@ -5,9 +5,13 @@ import com.danveloper.ratpack.workflow.FlowStatus
 import com.danveloper.ratpack.workflow.FlowStatusRepository
 import com.danveloper.ratpack.workflow.WorkProcessor
 import com.danveloper.ratpack.workflow.internal.DefaultFlowStatus
+import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import ratpack.exec.Promise
 import ratpack.func.Action
+import ratpack.registry.Registry
+import ratpack.server.RatpackServer
 import ratpack.test.embed.EmbeddedApp
+import ratpack.test.embed.internal.EmbeddedAppSupport
 import spock.lang.AutoCleanup
 import spock.lang.Specification
 
@@ -44,15 +48,16 @@ class FlowSubmissionHandlerSpec extends Specification {
 
   @AutoCleanup
   @Delegate
-  EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .registryOf { r ->
-        r.add(FlowStatusRepository, repo)
-        r.add(WorkProcessor, workProcessor)
+  EmbeddedApp app = EmbeddedApp.fromServer {
+    RatpackWorkflow.of { spec ->
+      spec
+          .flowRepo { w -> repo }
+          .serverConfig { d -> d.port(0) }
+          .handlers { chain ->
+        chain.register(Registry.single(WorkProcessor, workProcessor)).post(new FlowSubmissionHandler())
       }
-      .handlers { chain ->
-    chain.post(new FlowSubmissionHandler())
+    }
   }
-  } as Action)
 
   void "should form a FlowConfigSource and submit for processing"() {
     setup:

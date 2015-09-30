@@ -47,6 +47,7 @@ class FunctionalSpec extends Specification {
   @Delegate
   EmbeddedApp app = EmbeddedApp.fromServer {
     RatpackWorkflow.of { spec -> spec
+      .serverConfig { s -> s.port(0) }
       .workflow { chain -> chain
         .all { ctx ->
           latch.countDown()

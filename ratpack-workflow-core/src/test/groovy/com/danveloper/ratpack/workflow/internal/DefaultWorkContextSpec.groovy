@@ -12,6 +12,8 @@ import spock.lang.Specification
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
+import static com.danveloper.ratpack.workflow.internal.ExceptionUtil.exceptionToString
+
 class DefaultWorkContextSpec extends Specification {
 
   @AutoCleanup
@@ -209,7 +211,7 @@ class DefaultWorkContextSpec extends Specification {
 
     then:
     works.state == WorkState.FAILED
-    works.error == exception
+    works.error == exceptionToString(exception)
   }
 
   void "work should be able to retry itself"() {
@@ -249,9 +251,12 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo)
 
     and:
-    def works = ExecHarness.yieldSingle {
-      repo.list()
+    def page = ExecHarness.yieldSingle {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()
@@ -278,9 +283,12 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo)
 
     and:
-    def works = ExecHarness.yieldSingle {
-      repo.list()
+    def page = ExecHarness.yieldSingle {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()
@@ -299,9 +307,12 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo)
 
     and:
-    def works = ExecHarness.yieldSingle {
-      repo.list()
+    def page = ExecHarness.yieldSingle {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()
@@ -331,9 +342,12 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo)
 
     and:
-    def works = ExecHarness.yieldSingle {
-      repo.list()
+    def page = ExecHarness.yieldSingle {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()
@@ -406,9 +420,12 @@ class DefaultWorkContextSpec extends Specification {
     0 == adder.get()
 
     when:
-    def works = execHarness.yield {
-      repo.list()
+    def page = execHarness.yield {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()
@@ -427,9 +444,12 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo)
 
     and:
-    def works = execHarness.yield {
-      repo.list()
+    def page = execHarness.yield {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()
@@ -450,9 +470,12 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo)
 
     and:
-    def works = execHarness.yield {
-      repo.list()
+    def page = execHarness.yield {
+      repo.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def works = page.objs
 
     then:
     1 == works.size()

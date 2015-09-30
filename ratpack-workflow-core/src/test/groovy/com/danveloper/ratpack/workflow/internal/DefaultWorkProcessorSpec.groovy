@@ -5,7 +5,6 @@ import com.danveloper.ratpack.workflow.server.WorkChainConfig
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
 import ratpack.func.Action
-import ratpack.func.Function
 import ratpack.registry.Registry
 import ratpack.server.internal.DefaultEvent
 import ratpack.test.exec.ExecHarness
@@ -132,16 +131,19 @@ class DefaultWorkProcessorSpec extends Specification {
     execHarness.controller.eventLoopGroup.awaitTermination(5, TimeUnit.SECONDS)
 
     and:
-    def flows = execHarness.yield {
-      flowStatusRepository.list()
+    def page = execHarness.yield {
+      flowStatusRepository.list(0, 10)
     }.valueOrThrow
+
+    and:
+    def flows = page.objs
 
     then:
     0 == adder.get()
     1 == flows.size()
     flows[0].state == WorkState.FAILED
     flows[0].works[0].state == WorkState.FAILED
-    flows[0].works[0].error.message == "!!"
+    flows[0].works[0].error.startsWith("java.lang.RuntimeException: !!")
     flows[0].works[1].state == WorkState.NOT_STARTED
   }
 }

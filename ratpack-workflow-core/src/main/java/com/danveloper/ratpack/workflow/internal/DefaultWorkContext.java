@@ -15,6 +15,8 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.Optional;
 
+import static com.danveloper.ratpack.workflow.internal.ExceptionUtil.exceptionToString;
+
 public class DefaultWorkContext implements WorkContext {
   private final WorkConstants workConstants;
   private final Registry registry;
@@ -205,12 +207,6 @@ public class DefaultWorkContext implements WorkContext {
   DefaultWorkContext(WorkConstants workConstants, Registry registry) {
     this.workConstants = workConstants;
     this.registry = registry;
-  }
-
-  private static String exceptionToString(Throwable e) {
-    StringWriter sw = new StringWriter();
-    e.printStackTrace(new PrintWriter(sw));
-    return sw.toString();
   }
 
   private Registry getContextRegistry() {

@@ -69,27 +69,36 @@ class InMemoryFlowStatusRepositorySpec extends Specification {
     }.valueOrThrow
 
     when:
-    def statuses = ExecHarness.yieldSingle {
-      flowStatusRepo.findByTag("stack", "prod")
+    def page = ExecHarness.yieldSingle {
+      flowStatusRepo.findByTag(0, 10, "stack", "prod")
     }.valueOrThrow
+
+    and:
+    def statuses = page.objs
 
     then:
     1 == statuses.size()
     statuses[0] == status
 
     when:
-    statuses = ExecHarness.yieldSingle {
-      flowStatusRepo.findByTag("phase", "build")
+    page = ExecHarness.yieldSingle {
+      flowStatusRepo.findByTag(0, 10, "phase", "build")
     }.valueOrThrow
+
+    and:
+    statuses = page.objs
 
     then:
     1 == statuses.size()
     statuses[0] == status
 
     when:
-    statuses = ExecHarness.yieldSingle {
-      flowStatusRepo.findByTag("nothing", "")
+    page = ExecHarness.yieldSingle {
+      flowStatusRepo.findByTag(0, 10, "nothing", "")
     }.valueOrThrow
+
+    and:
+    statuses = page.objs
 
     then:
     0 == statuses.size()

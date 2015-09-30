@@ -16,7 +16,9 @@ class FunctionalGroovyDSLSpec extends Specification {
   GroovyRatpackWorkflowEmbeddedApp app = GroovyRatpackWorkflowEmbeddedApp.of {
     workRepo(new StubWorkRepo())
     flowRepo { w -> new StubFlowRepo() }
-
+    serverConfig {
+      port 0
+    }
     handlers {
       get {
         render get(WorkStatusRepository).class.simpleName

@@ -4,6 +4,7 @@ import com.danveloper.ratpack.workflow.FlowStatusRepository
 import com.danveloper.ratpack.workflow.WorkState
 import com.danveloper.ratpack.workflow.internal.DefaultFlowStatus
 import com.danveloper.ratpack.workflow.internal.DefaultWorkStatus
+import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
 import ratpack.exec.Promise
 import ratpack.func.Action
@@ -16,12 +17,16 @@ class FlowStatusGetHandlerSpec extends Specification {
 
   @AutoCleanup
   @Delegate
-  EmbeddedApp app = EmbeddedApp.of({ spec -> spec
-      .registryOf { r -> r.add(FlowStatusRepository, repo) }
-      .handlers { chain ->
-    chain.get(":id", new FlowStatusGetHandler())
+  EmbeddedApp app = EmbeddedApp.fromServer {
+    RatpackWorkflow.of { spec ->
+      spec
+      .flowRepo { w -> repo}
+      .serverConfig { d -> d.port(0) }
+          .handlers { chain ->
+        chain.get(":id", new FlowStatusGetHandler())
+      }
+    }
   }
-  } as Action)
 
   void "should return a FlowStatus by id"() {
     setup:

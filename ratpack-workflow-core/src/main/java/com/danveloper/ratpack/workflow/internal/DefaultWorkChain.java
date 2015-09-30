@@ -20,6 +20,12 @@ public class DefaultWorkChain implements WorkChain {
   }
 
   @Override
+  public WorkChain all(Class<? extends Work> work) {
+    works.add(new TypedVersionedWork("", "", registry.get(work)));
+    return this;
+  }
+
+  @Override
   public WorkChain work(String type, String version, Work work) {
     works.add(new TypedVersionedWork(type, version, work));
     return this;

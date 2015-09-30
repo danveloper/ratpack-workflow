@@ -1,11 +1,17 @@
 package com.danveloper.ratpack.workflow.redis
 
 import com.danveloper.ratpack.workflow.FlowStatus
+import com.danveloper.ratpack.workflow.Page
 import com.danveloper.ratpack.workflow.WorkState
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
+import ratpack.func.Factory
+import ratpack.func.Function
+import ratpack.server.RatpackServer
+import ratpack.server.RatpackServerSpec
 import ratpack.test.embed.EmbeddedApp
+import ratpack.test.embed.internal.EmbeddedAppSupport
 import redis.clients.jedis.JedisPool
 
 import java.util.concurrent.CountDownLatch
@@ -17,6 +23,7 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
   def mapper = new ObjectMapper()
 
   static CountDownLatch latch
+  static CountDownLatch closeLatch
 
   def singleJson = """
         {
@@ -48,7 +55,12 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
     }
   """
 
-  EmbeddedApp app = EmbeddedApp.fromServer(RatpackWorkflow.of { spec -> spec
+  def cleanup() {
+    jedisPool.resource.flushAll()
+  }
+
+  EmbeddedApp app = fromServer(RatpackWorkflow.of { spec -> spec
+    .serverConfig { d -> d.port(0) }
     .workRepo(new RedisWorkStatusRepository(jedisPool))
     .flowRepo { w -> new RedisFlowStatusRepository(jedisPool, w) }
     .workflow { chain -> chain
@@ -117,6 +129,7 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
   void "flow work should be properly (de)serialized"() {
     setup:
     latch = new CountDownLatch(2)
+    closeLatch = new CountDownLatch(1)
 
     when:
     app.httpClient.requestSpec { rspec -> rspec
@@ -131,6 +144,9 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
     and:
     latch.await(5, TimeUnit.SECONDS)
 
+    and:
+    closeLatch.await(5, TimeUnit.SECONDS)
+
     then:
     0l == latch.count
 
@@ -138,7 +154,10 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
     def flowsJson = app.httpClient.getText("flows/list")
 
     and:
-    def flows = (List<FlowStatus>)mapper.readValue(flowsJson, new TypeReference<List<FlowStatus>>() {})
+    def page = (Page<FlowStatus>)mapper.readValue(flowsJson, new TypeReference<Page<FlowStatus>>() {})
+
+    and:
+    def flows = page.objs
 
     then:
     1 == flows.size()
@@ -146,5 +165,20 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
     1 == flows[0].works.size()
     flows[0].state == WorkState.COMPLETED
     flows[0].works*.state.unique() == [WorkState.COMPLETED]
+  }
+
+  private static EmbeddedApp fromServer(RatpackServer server) {
+    new EmbeddedAppSupport() {
+      @Override
+      protected RatpackServer createServer() throws Exception {
+        server
+      }
+
+      @Override
+      public void close() {
+        super.close()
+        closeLatch.countDown()
+      }
+    }
   }
 }
