@@ -52,9 +52,10 @@ class FlowSubmissionHandlerSpec extends Specification {
     RatpackWorkflow.of { spec ->
       spec
           .flowRepo { w -> repo }
+          .registryOf { r -> r.add(WorkProcessor, workProcessor) }
           .serverConfig { d -> d.port(0) }
           .handlers { chain ->
-        chain.register(Registry.single(WorkProcessor, workProcessor)).post(new FlowSubmissionHandler())
+        chain.post(new FlowSubmissionHandler())
       }
     }
   }

@@ -32,9 +32,10 @@ class WorkSubmissionHandlerSpec extends Specification {
     RatpackWorkflow.of { spec ->
       spec
           .workRepo(repo)
+          .registryOf { r -> r.add(WorkProcessor, workProcessor) }
           .serverConfig { d -> d.port(0) }
           .handlers { chain ->
-        chain.register(Registry.single(WorkProcessor, workProcessor)).post(new WorkSubmissionHandler())
+        chain.post(new WorkSubmissionHandler())
       }
     }
   }
