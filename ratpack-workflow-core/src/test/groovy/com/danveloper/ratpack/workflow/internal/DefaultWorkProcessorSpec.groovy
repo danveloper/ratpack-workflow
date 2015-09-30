@@ -146,4 +146,39 @@ class DefaultWorkProcessorSpec extends Specification {
     flows[0].works[0].error.startsWith("java.lang.RuntimeException: !!")
     flows[0].works[1].state == WorkState.NOT_STARTED
   }
+
+  void "should invoke interceptors before flows start"() {
+    setup:
+    def latch = new CountDownLatch(1)
+    FlowPreStartInterceptor i = { s -> latch.countDown() }
+    Action<WorkChain> actChain = { chain -> chain.all { c -> c.complete() } }
+    WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
+    FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
+    def workChainConfig = new WorkChainConfig()
+    workChainConfig.action = actChain
+    DefaultWorkProcessor processor = new DefaultWorkProcessor()
+    Registry registry = Registry.of() { r ->
+      r.add(WorkStatusRepository, workStatusRepository)
+      r.add(FlowStatusRepository, flowStatusRepository)
+      r.add(WorkChainConfig, workChainConfig)
+      r.add(FlowPreStartInterceptor, i)
+    }
+
+    when:
+    execHarness.run {
+      processor.onStart(new DefaultEvent(registry, false))
+      flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
+        processor.start(flowStatus).operation().then()
+      }
+    }
+
+    and:
+    execHarness.controller.eventLoopGroup.awaitTermination(5, TimeUnit.SECONDS)
+
+    and:
+    latch.await(5, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
 }

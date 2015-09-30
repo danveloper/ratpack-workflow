@@ -2,6 +2,7 @@ package com.danveloper.ratpack.workflow.internal;
 
 import com.danveloper.ratpack.workflow.*;
 import com.danveloper.ratpack.workflow.server.WorkChainConfig;
+import com.google.common.collect.Lists;
 import ratpack.exec.ExecController;
 import ratpack.exec.Execution;
 import ratpack.exec.Promise;
@@ -18,10 +19,12 @@ public class DefaultWorkProcessor implements WorkProcessor {
   private WorkChainConfig config;
   private WorkStatusRepository workStatusRepository;
   private FlowStatusRepository flowStatusRepository;
+  private List<FlowPreStartInterceptor> flowPreStartInterceptors;
 
   @Override
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
+    flowPreStartInterceptors = Lists.newArrayList(registry.getAll(FlowPreStartInterceptor.class));
     config = registry.get(WorkChainConfig.class);
     workStatusRepository = config.getWorkStatusRepository();
     flowStatusRepository = config.getFlowStatusRepositoryFunction().apply(config.getWorkStatusRepository());
@@ -41,6 +44,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
     }
 
     MutableFlowStatus status = flowStatus.toMutable();
+    flowPreStartInterceptors.forEach(i -> i.intercept(status));
     status.setState(WorkState.RUNNING);
     status.setStartTime(System.currentTimeMillis());
     return flowStatusRepository.save(status).flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
