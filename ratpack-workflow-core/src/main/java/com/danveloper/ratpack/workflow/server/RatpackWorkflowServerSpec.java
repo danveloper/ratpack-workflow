@@ -23,21 +23,6 @@ public class RatpackWorkflowServerSpec extends DelegatingRatpackServerSpec {
     return this;
   }
 
-  public RatpackWorkflowServerSpec workChain(Function<Registry, WorkChain> workChainFunc) {
-    workChainConfig.workChainFunction = workChainFunc;
-    return this;
-  }
-
-  public RatpackWorkflowServerSpec workRepo(WorkStatusRepository repo) {
-    workChainConfig.workStatusRepository = repo;
-    return this;
-  }
-
-  public RatpackWorkflowServerSpec flowRepo(Function<WorkStatusRepository, FlowStatusRepository> action) {
-    workChainConfig.flowStatusRepository = action;
-    return this;
-  }
-
   public Registry getRegistry() throws Exception {
     final FlowStatusRepository flowRepo = workChainConfig.getFlowStatusRepositoryFunction().apply(workChainConfig.workStatusRepository);
     return Registry.of(r -> r

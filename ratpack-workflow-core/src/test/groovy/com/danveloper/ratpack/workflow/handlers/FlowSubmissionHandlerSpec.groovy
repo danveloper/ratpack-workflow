@@ -51,8 +51,10 @@ class FlowSubmissionHandlerSpec extends Specification {
   EmbeddedApp app = EmbeddedApp.fromServer {
     RatpackWorkflow.of { spec ->
       spec
-          .flowRepo { w -> repo }
-          .registryOf { r -> r.add(WorkProcessor, workProcessor) }
+          .registryOf { r ->
+            r.add(WorkProcessor, workProcessor)
+            r.add(FlowStatusRepository, repo)
+      }
           .serverConfig { d -> d.port(0) }
           .handlers { chain ->
         chain.post(new FlowSubmissionHandler())

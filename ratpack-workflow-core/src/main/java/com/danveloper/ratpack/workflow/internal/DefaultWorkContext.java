@@ -180,7 +180,9 @@ public class DefaultWorkContext implements WorkContext {
             MutableWorkStatus mstatus = workStatus.toMutable();
             mstatus.setEndTime(System.currentTimeMillis());
             mstatus.setState(resultState);
-            Execution.fork().start(e1 -> workStatusRepository.save(workStatus).operation().then());
+            Execution.fork().start(e1 ->
+              workStatusRepository.save(workStatus).operation().then()
+            );
           });
 
           Registry subregistry = Registry.of(r -> r

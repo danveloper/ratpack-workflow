@@ -31,8 +31,10 @@ class WorkSubmissionHandlerSpec extends Specification {
   EmbeddedApp app = EmbeddedApp.fromServer {
     RatpackWorkflow.of { spec ->
       spec
-          .workRepo(repo)
-          .registryOf { r -> r.add(WorkProcessor, workProcessor) }
+          .registryOf { r ->
+            r.add(WorkProcessor, workProcessor)
+            r.add(WorkStatusRepository, repo)
+          }
           .serverConfig { d -> d.port(0) }
           .handlers { chain ->
         chain.post(new WorkSubmissionHandler())

@@ -14,10 +14,12 @@ class FunctionalGroovyDSLSpec extends Specification {
   @Delegate
   @AutoCleanup
   GroovyRatpackWorkflowEmbeddedApp app = GroovyRatpackWorkflowEmbeddedApp.of {
-    workRepo(new StubWorkRepo())
-    flowRepo { w -> new StubFlowRepo() }
     serverConfig {
       port 0
+    }
+    registryOf { r ->
+      r.add(WorkStatusRepository, new StubWorkRepo())
+      r.add(FlowStatusRepository, new StubFlowRepo())
     }
     handlers {
       get {

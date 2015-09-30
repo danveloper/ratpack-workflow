@@ -26,7 +26,7 @@ class FlowListHandlerSpec extends Specification {
   EmbeddedApp app = fromServer(
       RatpackWorkflow.of { spec ->
         spec
-            .flowRepo { w -> repo }
+            .registryOf { r -> r.add(FlowStatusRepository, repo) }
             .serverConfig { d -> d.port(0) }
             .handlers { chain ->
           chain.all(new FlowListHandler())

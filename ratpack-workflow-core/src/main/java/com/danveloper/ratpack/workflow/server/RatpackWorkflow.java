@@ -20,7 +20,9 @@ public interface RatpackWorkflow {
       definition.execute(spec);
       holder.overrides = spec.getRegistry();
     });
-    ServerCapturer.capture(server).registry(r -> holder.overrides.join(r));
+    ServerCapturer.capture(server).registry(r -> {
+      return holder.overrides.join(r);
+    });
     return server;
   }
 

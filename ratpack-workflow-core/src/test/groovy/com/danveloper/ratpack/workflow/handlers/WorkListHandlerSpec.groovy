@@ -19,7 +19,7 @@ class WorkListHandlerSpec extends Specification {
   EmbeddedApp app = EmbeddedApp.fromServer {
     RatpackWorkflow.of { spec ->
       spec
-          .workRepo(repo)
+          .registryOf { r -> r.add(WorkStatusRepository, repo) }
           .serverConfig { d -> d.port(0) }
           .handlers { chain ->
         chain.get(new WorkListHandler())

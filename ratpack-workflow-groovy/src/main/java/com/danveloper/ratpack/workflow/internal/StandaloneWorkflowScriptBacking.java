@@ -83,15 +83,5 @@ public class StandaloneWorkflowScriptBacking implements Action<Closure<?>> {
     public void workflow(Closure<?> configurer) {
       Exceptions.uncheck(() -> server.workflow(ClosureUtil.delegatingAction(configurer)));
     }
-
-    @Override
-    public void workRepo(WorkStatusRepository workRepo) {
-      server.workRepo(workRepo);
-    }
-
-    @Override
-    public void flowRepo(Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction) {
-      server.flowRepo(flowRepoFunction);
-    }
   }
 }

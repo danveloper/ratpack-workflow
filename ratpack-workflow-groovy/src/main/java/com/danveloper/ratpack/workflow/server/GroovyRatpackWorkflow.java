@@ -1,11 +1,7 @@
 package com.danveloper.ratpack.workflow.server;
 
-import com.danveloper.ratpack.workflow.FlowStatusRepository;
 import com.danveloper.ratpack.workflow.GroovyWorkChain;
-import com.danveloper.ratpack.workflow.WorkChain;
-import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import com.danveloper.ratpack.workflow.internal.DefaultGroovyWorkChain;
-import com.danveloper.ratpack.workflow.internal.DefaultWorkChain;
 import com.danveloper.ratpack.workflow.internal.StandaloneWorkflowScriptBacking;
 import com.danveloper.ratpack.workflow.internal.capture.RatpackWorkflowDslBacking;
 import com.danveloper.ratpack.workflow.internal.capture.RatpackWorkflowDslClosures;
@@ -53,7 +49,7 @@ public abstract class GroovyRatpackWorkflow {
       configurer.call();
       holder.overrides = spec.getRegistry();
     });
-    ServerCapturer.capture(server).registry(r -> r.join(holder.overrides));
+    ServerCapturer.capture(server).registry(r -> holder.overrides.join(r));
     return server;
   }
 
@@ -89,10 +85,6 @@ public abstract class GroovyRatpackWorkflow {
     void serverConfig(@DelegatesTo(value = ServerConfigBuilder.class, strategy = Closure.DELEGATE_FIRST) Closure<?> configurer);
 
     void workflow(@DelegatesTo(value = GroovyWorkChain.class, strategy = Closure.DELEGATE_FIRST) Closure<?> configurer);
-
-    void workRepo(WorkStatusRepository workRepo);
-
-    void flowRepo(Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction);
   }
 
   public static abstract class Script {
@@ -161,13 +153,6 @@ public abstract class GroovyRatpackWorkflow {
       definition.workflow(wc -> {
         ClosureUtil.configureDelegateFirst(new DefaultGroovyWorkChain(wc), closures.getWorkflows());
       });
-
-      if (closures.getWorkRepo() != null) {
-        definition.workRepo(closures.getWorkRepo());
-      }
-      if (closures.getFlowRepoFunction() != null) {
-        definition.flowRepo(closures.getFlowRepoFunction());
-      }
     }
 
     private static ServerConfigBuilder loadPropsIfPresent(ServerConfigBuilder serverConfigBuilder, Path baseDir) {

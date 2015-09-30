@@ -32,14 +32,4 @@ public class RatpackWorkflowDslBacking implements GroovyRatpackWorkflow.Ratpack 
   public void workflow(Closure<?> configurer) {
     closures.setWorkflows(configurer);
   }
-
-  @Override
-  public void workRepo(WorkStatusRepository workRepo) {
-    closures.setWorkRepo(workRepo);
-  }
-
-  @Override
-  public void flowRepo(Function<WorkStatusRepository, FlowStatusRepository> flowRepoFunction) {
-    closures.setFlowRepoFunction(flowRepoFunction);
-  }
 }

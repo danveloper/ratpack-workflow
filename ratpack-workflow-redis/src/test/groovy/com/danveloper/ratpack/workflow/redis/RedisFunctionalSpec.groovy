@@ -1,8 +1,10 @@
 package com.danveloper.ratpack.workflow.redis
 
 import com.danveloper.ratpack.workflow.FlowStatus
+import com.danveloper.ratpack.workflow.FlowStatusRepository
 import com.danveloper.ratpack.workflow.Page
 import com.danveloper.ratpack.workflow.WorkState
+import com.danveloper.ratpack.workflow.WorkStatusRepository
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -61,8 +63,11 @@ class RedisFunctionalSpec extends RedisRepositorySpec {
 
   EmbeddedApp app = fromServer(RatpackWorkflow.of { spec -> spec
     .serverConfig { d -> d.port(0) }
-    .workRepo(new RedisWorkStatusRepository(jedisPool))
-    .flowRepo { w -> new RedisFlowStatusRepository(jedisPool, w) }
+    .registryOf { r ->
+      def workStatusRepo = new RedisWorkStatusRepository(jedisPool)
+      r.add(WorkStatusRepository, workStatusRepo)
+      r.add(FlowStatusRepository, new RedisFlowStatusRepository(jedisPool, workStatusRepo))
+    }
     .workflow { chain -> chain
       .all { ctx ->
         latch.countDown()

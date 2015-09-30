@@ -25,9 +25,10 @@ public class DefaultWorkProcessor implements WorkProcessor {
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
     flowPreStartInterceptors = Lists.newArrayList(registry.getAll(FlowPreStartInterceptor.class));
+    flowPreStartInterceptors.add(new StatusFlowInterceptor());
     config = registry.get(WorkChainConfig.class);
-    workStatusRepository = config.getWorkStatusRepository();
-    flowStatusRepository = config.getFlowStatusRepositoryFunction().apply(config.getWorkStatusRepository());
+    workStatusRepository = registry.get(WorkStatusRepository.class);
+    flowStatusRepository = registry.get(FlowStatusRepository.class);
     WorkChain chain = config.getWorkChainFunction().apply(registry);
     config.getAction().execute(chain);
     this.works = chain.getWorks().toArray(new Work[chain.getWorks().size()]);
@@ -52,10 +53,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
         p = p.flatMap(s1 -> interceptor.intercept(s1.toMutable()));
       }
     }
-    status.setState(WorkState.RUNNING);
-    status.setStartTime(System.currentTimeMillis());
-    return (p == null ? flowStatusRepository.save(status) : p.flatMap(flowStatusRepository::save))
-        .flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
+    return p.flatMap(flowStatusRepository::save).flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
   }
 
   @Override
@@ -65,7 +63,7 @@ public class DefaultWorkProcessor implements WorkProcessor {
       mstatus.setStartTime(System.currentTimeMillis());
       mstatus.setState(WorkState.RUNNING);
       return workStatusRepository.save(mstatus).flatMap(l ->
-        DefaultWorkContext.start(works, workStatus, config.getWorkStatusRepository(), registry)
+        DefaultWorkContext.start(works, workStatus, registry.get(WorkStatusRepository.class), registry)
       );
     } catch (Exception e) {
       return Promise.of(f -> f.error(e));
@@ -126,6 +124,16 @@ public class DefaultWorkProcessor implements WorkProcessor {
       mflow.setEndTime(System.currentTimeMillis());
       mflow.setState(state);
       flowStatusRepository.save(mflow).operation().then();
+    }
+  }
+
+  private static class StatusFlowInterceptor implements FlowPreStartInterceptor {
+
+    @Override
+    public Promise<FlowStatus> intercept(MutableFlowStatus status) {
+      status.setState(WorkState.RUNNING);
+      status.setStartTime(System.currentTimeMillis());
+      return Promise.value(status);
     }
   }
 }
