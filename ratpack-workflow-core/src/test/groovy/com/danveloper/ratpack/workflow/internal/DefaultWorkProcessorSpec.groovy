@@ -4,6 +4,7 @@ import com.danveloper.ratpack.workflow.*
 import com.danveloper.ratpack.workflow.server.WorkChainConfig
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
+import ratpack.exec.Promise
 import ratpack.func.Action
 import ratpack.registry.Registry
 import ratpack.server.internal.DefaultEvent
@@ -150,8 +151,9 @@ class DefaultWorkProcessorSpec extends Specification {
   void "should invoke interceptors before flows start"() {
     setup:
     def latch = new CountDownLatch(1)
-    FlowPreStartInterceptor i = { s -> latch.countDown() }
-    Action<WorkChain> actChain = { chain -> chain.all { c -> c.complete() } }
+    def invocationList = []
+    FlowPreStartInterceptor i = { s -> latch.countDown(); invocationList << 1; Promise.value(s) }
+    Action<WorkChain> actChain = { chain -> chain.all { c -> invocationList << 2; c.complete() } }
     WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
     FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
     def workChainConfig = new WorkChainConfig()
@@ -179,6 +181,7 @@ class DefaultWorkProcessorSpec extends Specification {
     latch.await(5, TimeUnit.SECONDS)
 
     then:
+    [1, 2, 2] == invocationList
     0l == latch.count
   }
 }

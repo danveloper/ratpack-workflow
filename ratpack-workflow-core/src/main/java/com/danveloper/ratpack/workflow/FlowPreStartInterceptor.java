@@ -1,6 +1,8 @@
 package com.danveloper.ratpack.workflow;
 
+import ratpack.exec.Promise;
+
 public interface FlowPreStartInterceptor {
 
-  FlowStatus intercept(MutableFlowStatus flowStatus);
+  Promise<FlowStatus> intercept(MutableFlowStatus flowStatus);
 }

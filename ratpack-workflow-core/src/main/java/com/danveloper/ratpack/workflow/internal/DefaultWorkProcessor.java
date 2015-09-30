@@ -44,10 +44,18 @@ public class DefaultWorkProcessor implements WorkProcessor {
     }
 
     MutableFlowStatus status = flowStatus.toMutable();
-    flowPreStartInterceptors.forEach(i -> i.intercept(status));
+    Promise<FlowStatus> p = null;
+    for (FlowPreStartInterceptor interceptor : flowPreStartInterceptors) {
+      if (p == null) {
+        p = interceptor.intercept(status);
+      } else {
+        p = p.flatMap(s1 -> interceptor.intercept(s1.toMutable()));
+      }
+    }
     status.setState(WorkState.RUNNING);
     status.setStartTime(System.currentTimeMillis());
-    return flowStatusRepository.save(status).flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
+    return (p == null ? flowStatusRepository.save(status) : p.flatMap(flowStatusRepository::save))
+        .flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
   }
 
   @Override
