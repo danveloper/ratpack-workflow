@@ -220,4 +220,43 @@ class DefaultWorkProcessorSpec extends Specification {
     then:
     0l == latch.count
   }
+
+  void "should be able to access the FlowStatus from a work"() {
+    setup:
+    CountDownLatch latch = new CountDownLatch(1)
+    Action<WorkChain> actChain = { chain -> chain
+      .all { ctx ->
+        FlowStatus status = ctx.get(FlowStatus)
+        if (status) {
+          latch.countDown()
+        }
+      }
+    }
+    FlowErrorHandler errorHandler = { r, f -> latch.countDown() }
+    WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
+    FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
+    def workChainConfig = new WorkChainConfig()
+    workChainConfig.action = actChain
+    DefaultWorkProcessor processor = new DefaultWorkProcessor()
+    Registry registry = Registry.of() { r ->
+      r.add(WorkStatusRepository, workStatusRepository)
+      r.add(FlowStatusRepository, flowStatusRepository)
+      r.add(WorkChainConfig, workChainConfig)
+      r.add(FlowErrorHandler, errorHandler)
+    }
+
+    when:
+    execHarness.run {
+      processor.onStart(new DefaultEvent(registry, false))
+      flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
+        processor.start(flowStatus).operation().then()
+      }
+    }
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
 }

@@ -53,11 +53,16 @@ public class DefaultWorkProcessor implements WorkProcessor {
         p = p.flatMap(s1 -> interceptor.intercept(s1.toMutable()));
       }
     }
-    return p.flatMap(flowStatusRepository::save).flatMap(st -> start(st.getWorks().get(0))).map(s -> status.getId());
+    return p.flatMap(flowStatusRepository::save).flatMap(st ->
+        start(st.getWorks().get(0), registry.join(Registry.single(FlowStatus.class, status)))).map(s -> status.getId());
   }
 
   @Override
   public Promise<String> start(WorkStatus workStatus) {
+    return start(workStatus, registry);
+  }
+
+  private Promise<String> start(WorkStatus workStatus, Registry registry) {
     try {
       MutableWorkStatus mstatus = workStatus.toMutable();
       mstatus.setStartTime(System.currentTimeMillis());
@@ -92,7 +97,8 @@ public class DefaultWorkProcessor implements WorkProcessor {
               WorkStatus workStatus = workOption.get();
               workStatusRepository.lock(workStatus.getId()).then(locked -> {
                 if (locked) {
-                  start(workStatus).flatMap(l -> workStatusRepository.unlock(workStatus.getId())).operation().then();
+                  start(workStatus, registry.join(Registry.single(FlowStatus.class, flow)))
+                      .flatMap(l -> workStatusRepository.unlock(workStatus.getId())).operation().then();
                 }
               });
             } else {
