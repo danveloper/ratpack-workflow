@@ -106,13 +106,18 @@ public class DefaultWorkProcessor implements WorkProcessor {
           }
         }
         if (page.getNumPages() > offset) {
-          loadFlows(offset+1, limit);
+          loadFlows(offset + 1, limit);
         }
       });
     }
 
     private void failFlow(FlowStatus flow) {
       endFlow(flow, WorkState.FAILED);
+      Optional<FlowErrorHandler> o = registry.maybeGet(FlowErrorHandler.class);
+      if (o.isPresent()) {
+        FlowErrorHandler errorHandler = o.get();
+        errorHandler.error(registry, flow);
+      }
     }
 
     private void completeFlow(FlowStatus flow) {
