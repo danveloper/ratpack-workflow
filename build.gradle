@@ -1,3 +1,14 @@
+buildscript {
+  repositories { 
+    jcenter() 
+  }
+  dependencies {
+    classpath "org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3"
+  }
+}
+
+apply plugin: 'artifactory'
+
 allprojects {
   repositories {
     jcenter()
@@ -7,6 +18,8 @@ allprojects {
   apply plugin: 'groovy'
   apply plugin: 'jacoco'
   apply plugin: 'maven'
+  apply plugin: 'maven-publish'
+  apply plugin: 'artifactory'
  
   ext {
     ratpackVersion = "1.0.0"
@@ -27,6 +40,34 @@ allprojects {
       xml.enabled false
       csv.enabled false
       html.destination "${buildDir}/jacocoHtml"
+    }
+  }
+
+  artifactory {
+    contextUrl = 'http://oss.jfrog.org'
+  }
+
+  artifactoryPublish { task ->
+    rootProject.artifactory {
+      publish {
+        repository {
+          repoKey = version.endsWith("-SNAPSHOT") ? 'oss-snapshot-local' : 'oss-release-local'
+          gradle.taskGraph.whenReady { taskGraph ->
+            if (taskGraph.hasTask(task)) {
+              username = bintrayUser
+              password = bintrayKey
+            }
+          }
+        }
+      }
+    }
+  }
+
+  publishing {
+    publications {
+      mavenJava(MavenPublication) {
+        from components.java
+      }
     }
   }
 }
