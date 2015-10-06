@@ -9,6 +9,7 @@ import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
 import spock.lang.Specification
 
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -493,5 +494,30 @@ class DefaultWorkContextSpec extends Specification {
     execHarness.controller.eventLoopGroup.awaitTermination(1, TimeUnit.SECONDS)
   }
 
+  void "insert with registry should propagate components down the chain"() {
+    setup:
+    def testObject = new TestObject(foo: "bar")
+    def latch = new CountDownLatch(1)
+    def nextWork = { ctx ->
+      TestObject obj = ctx.get(TestObject)
+      if (obj.foo == "bar") {
+        latch.countDown()
+        ctx.complete()
+      }
+    } as Work
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all { ctx ->
+      ctx.insert(Registry.single(testObject), nextWork)
+    }
 
+    when:
+    run(chain, repo)
+
+    and:
+    latch.await(5, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
 }

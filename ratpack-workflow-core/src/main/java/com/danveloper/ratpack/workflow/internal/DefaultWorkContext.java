@@ -64,7 +64,7 @@ public class DefaultWorkContext implements WorkContext {
     if (works.length == 0) {
       throw new IllegalArgumentException("works is zero length");
     }
-    workConstants.indexes.push(new ChainIndex(works, registry.join(registry), false));
+    workConstants.indexes.push(new ChainIndex(works, getContextRegistry().join(registry), false));
     next();
   }
 
