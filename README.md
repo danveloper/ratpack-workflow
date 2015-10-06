@@ -23,7 +23,7 @@ dependencies {
 Quick Start
 ===
 
-The project ships with a [WorkflowModule](https://github.com/danveloper/ratpack-workflow/blob/master/src/main/java/com/danveloper/ratpack/workflow/guice/WorkflowModule.java) that you'll need to incorporate into your project. It supplies the handlers that you can use to RESTfully retrieve details about a specific work or flow operation.
+The project ships with an extension to the regular Ratpack server specification. Nothing about your application needs to change except the class from which you import the `RatpackServer`. The below example shows importing the Groovy DSL from the `GroovyRatpackWorkflow` class, instead of Ratpack's `Groovy` class.
 
 ```groovy
 @Grab('com.danveloper.ratpack.workflow:ratpack-workflow-groovy:0.1-SNAPSHOT')
@@ -63,6 +63,75 @@ ratpack {
       get(RatpackWorkflow.workListHandler())
       post(RatpackWorkflow.workSubmissionHandler())
     }
+    // ...
+  }
+}
+```
+
+RESTful HTTP handlers are provided via static methods on the `RatpackWorkflow` class. You can use these endpoints to list jobs, lookup specific jobs, and submit jobs.
+
+Submitting Work
+===
+
+A properly formed JSON payload can be POSTed to the `FlowSubmissionHandler` to start a flow.
+
+```javascript
+{
+  "name": "AWESOME-FLOW-001"
+  "description": "My awesome flow thingy",
+  "tags": {
+    "key": "val"
+  },
+  "works": [
+    {
+      "type": "workSomething",
+      "version": "1.0",
+      "data": {
+        "key": "val",
+        "key2": "val2"
+      }
+    },
+    {
+      "type": "workSomethingElse",
+      "version": "1.0",
+      "data": {
+        "somekey": "someval",
+        "somekey2": "someval2"
+      }
+    }
+  ]
+}
+```
+
+Given this JSON, a workflow definition like the following will be matched:
+
+```
+class WorkSomethingConfig {
+  String key
+  String key2
+}
+
+class WorkSomethingElseConfig {
+  String somekey
+  String somekey2
+}
+
+ratpack {
+  workflow {
+    work("workSomething", "1.0") {
+      def workConfig = config.mapData(WorkSomethingConfig)
+      assert workConfig.key == "val"
+      assert workConfig.key2 == "val2"
+      complete()
+    }
+    work("workSomethingElse", "1.0") {
+      def workConfig = config.mapData(WorkSomethingElseConfig)
+      assert workConfig.somekey == "someval"
+      assert workConfig.somekey2 == "someval2"
+      complete()
+    }
+  }
+  handlers {
     // ...
   }
 }
