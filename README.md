@@ -1,7 +1,24 @@
-ratpack-workflow
+Ratpack Workflow
 ---
 
 A workflow engine for Ratpack, built on the Ratpack Execution Model
+
+[![Build Status](https://travis-ci.org/danveloper/ratpack-workflow.svg)](https://travis-ci.org/danveloper/ratpack-workflow)
+
+Try it
+===
+
+Add this to your build.gradle:
+
+```groovy
+repositories {
+  maven { url 'http://oss.jfrog.org/artifactory/repo' }
+}
+
+dependencies {
+  compile 'com.danveloper.ratpack.workflow:ratpack-workflow:0.1-SNAPSHOT'
+}
+```
 
 Quick Start
 ===

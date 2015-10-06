@@ -3,10 +3,12 @@ buildscript {
     jcenter() 
   }
   dependencies {
-    classpath "org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3"
+    classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:2.2.3'
+    classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:1.0.2'
   }
 }
 
+apply plugin: 'com.github.kt3k.coveralls'
 apply plugin: 'artifactory'
 
 allprojects {
@@ -23,6 +25,10 @@ allprojects {
  
   ext {
     ratpackVersion = "1.0.0"
+  }
+
+  jacoco {
+      toolVersion = '0.7.1.201405082137'
   }
 
   group = "com.danveloper.ratpack.workflow"
@@ -69,5 +75,22 @@ allprojects {
         from components.java
       }
     }
+  }
+}
+
+coveralls {
+  sourceDirs = files(subprojects.sourceSets.main.allSource.srcDirs).files.absolutePath
+}
+
+task jacocoRootReport(type: org.gradle.testing.jacoco.tasks.JacocoReport) {
+  dependsOn = subprojects.test
+  sourceDirectories = files(subprojects.sourceSets.main.allSource.srcDirs)
+  classDirectories =  files(subprojects.sourceSets.main.output)
+  executionData = files(subprojects.jacocoTestReport.executionData)
+  reports {
+    html.enabled = true
+    xml.enabled = true
+    csv.enabled = false
+    xml.destination = "${buildDir}/reports/jacoco/test/jacocoTestReport.xml"
   }
 }
