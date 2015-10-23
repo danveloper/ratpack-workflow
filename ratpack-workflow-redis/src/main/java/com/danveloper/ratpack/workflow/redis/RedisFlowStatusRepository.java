@@ -64,36 +64,29 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
   public Promise<FlowStatus> save(FlowStatus status) {
     String json = json(status);
 
-    return Blocking.get(() ->
-            exec(jedis -> {
-              jedis.hset("flow:all", status.getId(), json);
-              status.getWorks().forEach(workStatus -> {
-                jedis.sadd("flow:works:" + status.getId(), workStatus.getId());
-              });
-              if (status.getState() != WorkState.RUNNING) {
-                jedis.lrem("flow:running", 0, status.getId());
-              } else {
-                jedis.lpush("flow:running", status.getId());
-              }
-              return null;
-            })
-    ).flatMap(l -> get(status.getId())).flatMap(newStatus -> {
-      if (!newStatus.getTags().equals(status.getTags())) {
-        return Blocking.get(() -> {
-          exec(jedis -> {
-            status.getTags().entrySet().forEach(e -> {
-              if (!newStatus.getTags().containsKey(e.getKey())) {
-                jedis.lpush("tags:" + e.getKey() + ":" + e.getValue(), newStatus.getId());
-              }
-            });
-            return null;
-          });
-          return newStatus;
-        });
-      } else {
-        return Promise.value(newStatus);
-      }
-    });
+    return get(status.getId()).flatMap(existing ->
+            Blocking.get(() ->
+                    exec(jedis -> {
+                      jedis.hset("flow:all", status.getId(), json);
+                      status.getWorks().forEach(workStatus -> {
+                        jedis.sadd("flow:works:" + status.getId(), workStatus.getId());
+                      });
+                      if (status.getState() != WorkState.RUNNING) {
+                        jedis.lrem("flow:running", 0, status.getId());
+                      } else {
+                        jedis.lpush("flow:running", status.getId());
+                      }
+                      if (existing != null) {
+                        status.getTags().entrySet().forEach(e -> {
+                          if (!existing.getTags().containsKey(e.getKey())) {
+                            jedis.lpush("tags:" + e.getKey() + ":" + e.getValue(), status.getId());
+                          }
+                        });
+                      }
+                      return null;
+                    })
+            )
+    ).flatMap(l -> get(status.getId()));
   }
 
   @Override
@@ -102,7 +95,19 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
             exec(jedis ->
                     jedis.hget("flow:all", id)
             )
-    ).map(this::readFlowStatus).flatMap(status -> Blocking.get(() -> blockingHydrateWorkStatuses(status)));
+    ).map(json -> {
+      if (json != null) {
+        return readFlowStatus(json);
+      } else {
+        return null;
+      }
+    }).flatMap(status -> {
+      if (status != null) {
+        return Blocking.get(() -> blockingHydrateWorkStatuses(status));
+      } else {
+        return Promise.value(null);
+      }
+    });
   }
 
   @Override

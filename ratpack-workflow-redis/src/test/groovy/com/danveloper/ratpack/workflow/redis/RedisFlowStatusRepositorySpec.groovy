@@ -244,12 +244,12 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
     }
 
     and:
-    def upd = ExecHarness.yieldSingle {
-      repo.get(status.getId())
+    def page = ExecHarness.yieldSingle {
+      repo.findByTag(0, 1, "newTag", "true")
     }.valueOrThrow
 
     then:
-    upd.tags.containsKey("newTag")
-    upd.tags["newTag"] == "true"
+    1 == page.objs.size()
+    page.objs*.id == [status.getId()]
   }
 }
