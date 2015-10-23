@@ -77,7 +77,23 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
               }
               return null;
             })
-    ).flatMap(l -> get(status.getId()));
+    ).flatMap(l -> get(status.getId())).flatMap(newStatus -> {
+      if (!newStatus.getTags().equals(status.getTags())) {
+        return Blocking.get(() -> {
+          exec(jedis -> {
+            status.getTags().entrySet().forEach(e -> {
+              if (!newStatus.getTags().containsKey(e.getKey())) {
+                jedis.lpush("tags:" + e.getKey() + ":" + e.getValue(), newStatus.getId());
+              }
+            });
+            return null;
+          });
+          return newStatus;
+        });
+      } else {
+        return Promise.value(newStatus);
+      }
+    });
   }
 
   @Override

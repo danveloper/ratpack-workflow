@@ -228,4 +228,28 @@ class RedisFlowStatusRepositorySpec extends RedisRepositorySpec {
     page.numPages == 1
     page.objs.size() == 1
   }
+
+  void "should be able to add tags to an existing flowStatus"() {
+    setup:
+    def status = ExecHarness.yieldSingle {
+      repo.create(config)
+    }.value
+
+    when:
+    status.tags["newTag"] = "true"
+
+    and:
+    ExecHarness.executeSingle {
+      repo.save(status).operation()
+    }
+
+    and:
+    def upd = ExecHarness.yieldSingle {
+      repo.get(status.getId())
+    }.valueOrThrow
+
+    then:
+    upd.tags.containsKey("newTag")
+    upd.tags["newTag"] == "true"
+  }
 }
