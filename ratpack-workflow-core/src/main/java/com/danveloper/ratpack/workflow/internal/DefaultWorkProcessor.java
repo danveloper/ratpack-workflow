@@ -31,6 +31,8 @@ public class DefaultWorkProcessor implements WorkProcessor {
     flowStatusRepository = registry.get(FlowStatusRepository.class);
     WorkChain chain = config.getWorkChainFunction().apply(registry);
     config.getAction().execute(chain);
+    List<WorkChainDecorator> workChainDecorators = Lists.newArrayList(registry.getAll(WorkChainDecorator.class));
+    workChainDecorators.forEach(decorator -> decorator.decorate(chain));
     this.works = chain.getWorks().toArray(new Work[chain.getWorks().size()]);
     ExecController.require().getExecutor().scheduleAtFixedRate(new FlowSupervisor(), 0, 1, TimeUnit.SECONDS);
   }

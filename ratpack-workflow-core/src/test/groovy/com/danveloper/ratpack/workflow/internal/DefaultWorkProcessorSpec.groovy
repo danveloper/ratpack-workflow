@@ -259,4 +259,38 @@ class DefaultWorkProcessorSpec extends Specification {
     then:
     0l == latch.count
   }
+
+  void "should be able to decorate the chain"() {
+    setup:
+    CountDownLatch latch = new CountDownLatch(1)
+    WorkChainDecorator decorator = { chain ->
+      chain.all { ctx ->
+        latch.countDown()
+      }
+    }
+    WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
+    FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
+    def workChainConfig = new WorkChainConfig()
+    DefaultWorkProcessor processor = new DefaultWorkProcessor()
+    Registry registry = Registry.of() { r ->
+      r.add(WorkStatusRepository, workStatusRepository)
+      r.add(FlowStatusRepository, flowStatusRepository)
+      r.add(WorkChainConfig, workChainConfig)
+      r.add(WorkChainDecorator, decorator)
+    }
+
+    when:
+    execHarness.run {
+      processor.onStart(new DefaultEvent(registry, false))
+      flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
+        processor.start(flowStatus).operation().then()
+      }
+    }
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
 }

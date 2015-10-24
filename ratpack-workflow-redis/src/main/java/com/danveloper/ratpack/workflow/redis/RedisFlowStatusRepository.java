@@ -73,7 +73,7 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
                       });
                       if (status.getState() != WorkState.RUNNING) {
                         jedis.lrem("flow:running", 0, status.getId());
-                      } else {
+                      } else if (existing != null && existing.getState() != status.getState()) {
                         jedis.lpush("flow:running", status.getId());
                       }
                       if (existing != null) {
