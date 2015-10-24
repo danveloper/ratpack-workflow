@@ -9,10 +9,9 @@ import ratpack.exec.Execution;
 import ratpack.exec.Promise;
 import ratpack.registry.Registry;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 import static com.danveloper.ratpack.workflow.internal.ExceptionUtil.exceptionToString;
@@ -180,9 +179,12 @@ public class DefaultWorkContext implements WorkContext {
             MutableWorkStatus mstatus = workStatus.toMutable();
             mstatus.setEndTime(System.currentTimeMillis());
             mstatus.setState(resultState);
-            Execution.fork().start(e1 ->
-              workStatusRepository.save(workStatus).operation().then()
-            );
+            Execution.fork().start(e1 -> {
+              workStatusRepository.save(workStatus).operation().then();
+              List<WorkCompletionHandler> completionHandlers = Lists
+                  .newArrayList(workConstants.context.getAll(WorkCompletionHandler.class));
+              completionHandlers.forEach(handler -> handler.complete().then());
+            });
           });
 
           Registry subregistry = Registry.of(r -> r

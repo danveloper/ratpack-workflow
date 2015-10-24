@@ -4,6 +4,7 @@ import com.danveloper.ratpack.workflow.*
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
 import ratpack.exec.Blocking
+import ratpack.exec.Operation
 import ratpack.registry.Registry
 import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
@@ -484,10 +485,10 @@ class DefaultWorkContextSpec extends Specification {
     works[0].messages[0].content == message
   }
 
-  private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository()) {
+  private void run(DefaultWorkChain chain, WorkStatusRepository repository=new InMemoryWorkStatusRepository(), Registry registry=Registry.empty()) {
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
-          .start(chain.works as Work[], config, repository, Registry.empty())
+          .start(chain.works as Work[], config, repository, registry)
           .operation()
           .then()
     }
@@ -516,6 +517,26 @@ class DefaultWorkContextSpec extends Specification {
 
     and:
     latch.await(5, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
+
+  void "should call WorkCompletionHandler when work is finished"() {
+    setup:
+    def latch = new CountDownLatch(1)
+    def completionInterceptor = { Operation.of { latch.countDown() } } as WorkCompletionHandler
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all { ctx ->
+      ctx.complete()
+    }
+
+    when:
+    run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
 
     then:
     0l == latch.count
