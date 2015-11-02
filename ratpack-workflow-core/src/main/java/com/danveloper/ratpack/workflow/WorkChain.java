@@ -28,6 +28,11 @@ public interface WorkChain {
 
   List<Work> getWorks();
 
+  default WorkChain insert(Action<WorkChain> chain) throws Exception {
+    chain.execute(this);
+    return this;
+  }
+
   static WorkChain of(Action<WorkChain> configurer) throws Exception {
     return of(Registry.empty(), configurer);
   }

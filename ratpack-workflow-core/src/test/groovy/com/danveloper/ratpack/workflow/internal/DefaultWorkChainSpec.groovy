@@ -1,5 +1,7 @@
 package com.danveloper.ratpack.workflow.internal
 
+import com.danveloper.ratpack.workflow.WorkChain
+import ratpack.func.Action
 import ratpack.registry.Registry
 import spock.lang.Specification
 
@@ -22,5 +24,16 @@ class DefaultWorkChainSpec extends Specification {
     flowwork.getDelegate() instanceof WorkChainWork
     1 == flowwork.getDelegate().works.size()
     flowwork.getDelegate().works[0].getType() == "flow/foo"
+  }
+
+  void "should compose a chain from a subchain action"() {
+    given:
+    def act = { WorkChain chain ->
+      chain.all { }
+    } as Action<WorkChain>
+    DefaultWorkChain chain = new DefaultWorkChain(Registry.empty()).insert(act)
+
+    expect:
+    1 == chain.works.size()
   }
 }

@@ -30,5 +30,12 @@ public interface GroovyWorkChain extends WorkChain {
     return flow(type, "", subchain);
   }
 
+  default GroovyWorkChain insert(@DelegatesTo(value = GroovyWorkChain.class, strategy = Closure.DELEGATE_FIRST) Closure<?> chain) throws Exception {
+    chain.setDelegate(this);
+    chain.setResolveStrategy(Closure.DELEGATE_FIRST);
+    chain.call();
+    return this;
+  }
+
   GroovyWorkChain flow(String type, String version, @DelegatesTo(value = GroovyWorkChain.class, strategy = Closure.DELEGATE_FIRST) Closure<?> subchain) throws Exception;
 }
