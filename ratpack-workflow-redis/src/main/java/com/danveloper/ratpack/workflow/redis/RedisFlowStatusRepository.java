@@ -9,7 +9,6 @@ import redis.clients.jedis.JedisPool;
 import rx.Observable;
 
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ratpack.rx.RxRatpack.observe;
@@ -68,8 +67,11 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
             Blocking.get(() ->
                     exec(jedis -> {
                       jedis.hset("flow:all", status.getId(), json);
+                      List<String> existingWorkIds = jedis.lrange("flow:works:" + status.getId(), 0, 1000);
                       status.getWorks().forEach(workStatus -> {
-                        jedis.sadd("flow:works:" + status.getId(), workStatus.getId());
+                        if (!existingWorkIds.contains(workStatus.getId())) {
+                          jedis.lpush("flow:works:" + status.getId(), workStatus.getId());
+                        }
                       });
                       if (status.getState() != WorkState.RUNNING) {
                         jedis.lrem("flow:running", 0, status.getId());
@@ -148,7 +150,7 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
 
   private FlowStatus blockingHydrateWorkStatuses(FlowStatus status) {
     return exec(jedis -> {
-      Set<String> workIds = jedis.smembers("flow:works:" + status.getId());
+      List<String> workIds = jedis.lrange("flow:works:" + status.getId(), 0, 1000);
       List<WorkStatus> workStatuses = jedis.hmget("work:all", workIds.toArray(new String[workIds.size()]))
           .stream().map(this::readWorkStatus).collect(Collectors.toList());
       MutableFlowStatus mflow = status.toMutable();

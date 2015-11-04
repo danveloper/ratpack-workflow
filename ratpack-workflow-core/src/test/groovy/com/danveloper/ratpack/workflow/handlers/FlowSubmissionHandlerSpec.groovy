@@ -7,11 +7,7 @@ import com.danveloper.ratpack.workflow.WorkProcessor
 import com.danveloper.ratpack.workflow.internal.DefaultFlowStatus
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import ratpack.exec.Promise
-import ratpack.func.Action
-import ratpack.registry.Registry
-import ratpack.server.RatpackServer
 import ratpack.test.embed.EmbeddedApp
-import ratpack.test.embed.internal.EmbeddedAppSupport
 import spock.lang.AutoCleanup
 import spock.lang.Specification
 

@@ -1,9 +1,11 @@
 package com.danveloper.ratpack.workflow;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Lists;
 import com.google.common.io.ByteSource;
 import ratpack.config.ConfigData;
 
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,19 +29,17 @@ public class FlowConfigSource {
     String name = configData.getRootNode().get("name").asText();
     String description = configData.getRootNode().get("description").asText();
     Map<String, String> tags = configData.get("/tags", LinkedHashMap.class);
-    List<WorkConfigSource> works = Lists.newArrayList(configData.getRootNode().get("works").iterator())
-        .stream()
-        .map(Object::toString)
-        .map(json -> {
-          try {
-            return ConfigData.of(d -> d.json(ByteSource.wrap(json.getBytes())).build());
-          } catch (Exception e) {
-            return null;
-          }
-        })
-        .filter(d -> d != null)
-        .map(WorkConfigSource::of)
-        .collect(Collectors.toList());
+    List<WorkConfigSource> works = Lists.newArrayList();
+    for (JsonNode node : configData.getRootNode().get("works")) {
+      String json = node.toString();
+      try {
+        ConfigData workConfig = ConfigData.of(d -> d.json(ByteSource.wrap(json.getBytes())).build());
+        WorkConfigSource workConfigSource = WorkConfigSource.of(workConfig);
+        works.add(workConfigSource);
+      } catch (Exception IGNORE) {
+        throw new RuntimeException("error converting work config source");
+      }
+    }
     return new FlowConfigSource(name, description, tags, works);
   }
 
