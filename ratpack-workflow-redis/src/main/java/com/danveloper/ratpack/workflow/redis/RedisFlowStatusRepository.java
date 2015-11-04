@@ -8,6 +8,7 @@ import ratpack.exec.Promise;
 import redis.clients.jedis.JedisPool;
 import rx.Observable;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -151,6 +152,7 @@ public class RedisFlowStatusRepository extends RedisRepositorySupport implements
   private FlowStatus blockingHydrateWorkStatuses(FlowStatus status) {
     return exec(jedis -> {
       List<String> workIds = jedis.lrange("flow:works:" + status.getId(), 0, 1000);
+      Collections.reverse(workIds);
       List<WorkStatus> workStatuses = jedis.hmget("work:all", workIds.toArray(new String[workIds.size()]))
           .stream().map(this::readWorkStatus).collect(Collectors.toList());
       MutableFlowStatus mflow = status.toMutable();
