@@ -96,7 +96,8 @@ public class RedisWorkStatusRepository extends RedisRepositorySupport implements
               if (jedis.exists(key)) {
                 return false;
               } else {
-                return Boolean.parseBoolean(jedis.getSet(key, "true"));
+                String val = jedis.getSet(key, "true");
+                return val == null ? Boolean.TRUE : Boolean.parseBoolean(val);
               }
             })
     );
