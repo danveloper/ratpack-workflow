@@ -93,21 +93,21 @@ public class DefaultWorkProcessor implements WorkProcessor {
           if (workFailed) {
             failFlow(flow);
           } else {
-            Optional<WorkStatus> workOption = flow.getWorks()
-                .stream().filter(workStatus -> workStatus.getState() == WorkState.NOT_STARTED).findFirst();
-            if (workOption.isPresent()) {
-              WorkStatus workStatus = workOption.get();
-              workStatusRepository.lock(workStatus.getId()).then(locked -> {
-                if (locked) {
-                  start(workStatus, registry.join(Registry.single(FlowStatus.class, flow)))
-                      .flatMap(l -> workStatusRepository.unlock(workStatus.getId())).operation().then();
-                }
-              });
-            } else {
-              Optional<WorkStatus> workOption2 = flow.getWorks()
-                  .stream().filter(workStatus -> workStatus.getState() == WorkState.RUNNING).findFirst();
-              boolean stillRunning = workOption2.isPresent();
-              if (!stillRunning) {
+            Boolean currentlyRunning = flow.getWorks().stream().anyMatch(workStatus ->
+                workStatus.getState() == WorkState.RUNNING);
+            if (!currentlyRunning) {
+              Optional<WorkStatus> workOption = flow.getWorks()
+                  .stream().filter(workStatus -> workStatus.getState() == WorkState.NOT_STARTED).findFirst();
+              if (workOption.isPresent()) {
+                WorkStatus workStatus = workOption.get();
+                workStatusRepository.lock(workStatus.getId()).then(locked -> {
+                  if (locked) {
+                    start(workStatus, registry.join(Registry.single(FlowStatus.class, flow)))
+                        .flatMap(l -> workStatusRepository.unlock(workStatus.getId())).operation().then();
+                  }
+                });
+              } else {
+                // all the work is done
                 completeFlow(flow);
               }
             }
