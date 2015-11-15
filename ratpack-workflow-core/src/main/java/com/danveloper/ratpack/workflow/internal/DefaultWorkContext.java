@@ -169,7 +169,16 @@ public class DefaultWorkContext implements WorkContext {
   public static Promise<String> start(Work[] works, EventLoop eventLoop, WorkStatus workStatus, WorkStatusRepository workStatusRepository, final Registry outerRegistry) throws Exception {
     Execution.fork()
         .eventLoop(eventLoop)
-        .onError(Throwable::printStackTrace)
+        .onError(t -> {
+          WorkState resultState = WorkState.FAILED;
+          MutableWorkStatus mstatus = workStatus.toMutable();
+          mstatus.setEndTime(System.currentTimeMillis());
+          mstatus.setState(resultState);
+          mstatus.setError(ExceptionUtil.exceptionToString(t));
+          Execution.fork().start(e1 -> {
+            workStatusRepository.save(workStatus).operation().then();
+          });
+        })
         .start(e -> {
           WorkConstants workConstants = new WorkConstants();
           workConstants.eventLoop = e.getEventLoop();
