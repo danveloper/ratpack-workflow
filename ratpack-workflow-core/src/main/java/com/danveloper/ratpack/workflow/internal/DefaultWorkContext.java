@@ -212,6 +212,7 @@ public class DefaultWorkContext implements WorkContext {
           workConstants.context = context;
 
           workConstants.execution = e;
+          e.add(WorkStatus.class, workStatus);
           context.next();
         });
     return Promise.value(workStatus.getId());

@@ -4,6 +4,7 @@ import com.danveloper.ratpack.workflow.*
 import com.google.common.io.ByteSource
 import ratpack.config.ConfigData
 import ratpack.exec.Blocking
+import ratpack.exec.Execution
 import ratpack.exec.Operation
 import ratpack.registry.Registry
 import ratpack.test.exec.ExecHarness
@@ -173,6 +174,27 @@ class DefaultWorkContextSpec extends Specification {
     .all { ctx ->
       // should not be called, since we are outside of the above sub-chain
       adder.incrementAndGet()
+    }
+
+    when:
+    run(chain)
+
+    then:
+    1 == adder.get()
+  }
+
+  void "work status should be accessible from the execution"() {
+    setup:
+    AtomicInteger adder = new AtomicInteger()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+        .all { ctx ->
+      def ws = Execution.current().get(WorkStatus)
+      if (ws) {
+        adder.incrementAndGet()
+      } else {
+        throw new RuntimeException()
+      }
+      ctx.complete()
     }
 
     when:
