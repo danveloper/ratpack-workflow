@@ -83,4 +83,9 @@ public class InMemoryWorkStatusRepository implements WorkStatusRepository {
     }
     return Promise.value(Boolean.TRUE);
   }
+
+  // only when you are sure of what you are doing
+  void remove(String id) {
+    storage.remove(id);
+  }
 }
