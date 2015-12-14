@@ -12,7 +12,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class InMemoryWorkStatusRepository implements WorkStatusRepository {
-  private final Map<String, WorkStatus> storage = Maps.newConcurrentMap();
+  private final Map<String, WorkStatus> storage = Maps.newLinkedHashMap();
   private final Map<String, Boolean> locks = Maps.newConcurrentMap();
 
   @Override

@@ -8,6 +8,7 @@ import ratpack.exec.Execution;
 import ratpack.exec.Promise;
 import ratpack.registry.Registry;
 import ratpack.server.StartEvent;
+import ratpack.stream.Streams;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,11 +21,13 @@ public class DefaultWorkProcessor implements WorkProcessor {
   private WorkStatusRepository workStatusRepository;
   private FlowStatusRepository flowStatusRepository;
   private List<FlowPreStartInterceptor> flowPreStartInterceptors;
+  private List<FlowCompletionHandler> flowCompletionHandlers;
 
   @Override
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
     flowPreStartInterceptors = Lists.newArrayList(registry.getAll(FlowPreStartInterceptor.class));
+    flowCompletionHandlers = Lists.newArrayList(registry.getAll(FlowCompletionHandler.class));
     flowPreStartInterceptors.add(new StatusFlowInterceptor());
     config = registry.get(WorkChainConfig.class);
     workStatusRepository = registry.get(WorkStatusRepository.class);
@@ -137,6 +140,8 @@ public class DefaultWorkProcessor implements WorkProcessor {
       mflow.setEndTime(System.currentTimeMillis());
       mflow.setState(state);
       flowStatusRepository.save(mflow).operation().then();
+      Streams.publish(flowCompletionHandlers).flatMap(h -> h.complete(registry, flow.toImmutable()).promise()).toList()
+          .operation().then();
     }
   }
 

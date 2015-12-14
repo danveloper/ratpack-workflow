@@ -293,4 +293,42 @@ class DefaultWorkProcessorSpec extends Specification {
     then:
     0l == latch.count
   }
+
+  void "should call FlowCompletionHandlers at end of flow"() {
+    setup:
+    CountDownLatch latch = new CountDownLatch(1)
+    Action<WorkChain> actChain = { chain -> chain
+      .all { ctx ->
+        ctx.complete()
+      }
+    }
+    FlowCompletionHandler completionHandler = { r, f ->
+      latch.countDown()
+    } as FlowCompletionHandler
+    WorkStatusRepository workStatusRepository = new InMemoryWorkStatusRepository()
+    FlowStatusRepository flowStatusRepository = new InMemoryFlowStatusRepository(workStatusRepository)
+    def workChainConfig = new WorkChainConfig()
+    workChainConfig.action = actChain
+    DefaultWorkProcessor processor = new DefaultWorkProcessor()
+    Registry registry = Registry.of() { r ->
+      r.add(WorkStatusRepository, workStatusRepository)
+      r.add(FlowStatusRepository, flowStatusRepository)
+      r.add(WorkChainConfig, workChainConfig)
+      r.add(FlowCompletionHandler, completionHandler)
+    }
+
+    when:
+    execHarness.run {
+      processor.onStart(new DefaultEvent(registry, false))
+      flowStatusRepository.create(FlowConfigSource.of(configData)).then { flowStatus ->
+        processor.start(flowStatus).operation().then()
+      }
+    }
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
 }
