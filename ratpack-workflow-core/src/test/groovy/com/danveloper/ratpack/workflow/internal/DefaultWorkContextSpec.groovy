@@ -563,4 +563,31 @@ class DefaultWorkContextSpec extends Specification {
     then:
     0l == latch.count
   }
+
+  void "should have access to WorkStatus in WorkCompletionHandler"() {
+    setup:
+    def latch = new CountDownLatch(1)
+    def completionInterceptor = {
+      def workStatus = Execution.current().get(WorkStatus)
+      Operation.of {
+        if (workStatus) {
+          latch.countDown()
+        }
+      }
+    } as WorkCompletionHandler
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+        .all { ctx ->
+      ctx.complete()
+    }
+
+    when:
+    run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
 }

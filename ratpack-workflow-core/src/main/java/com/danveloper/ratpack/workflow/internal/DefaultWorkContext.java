@@ -189,6 +189,7 @@ public class DefaultWorkContext implements WorkContext {
             mstatus.setEndTime(System.currentTimeMillis());
             mstatus.setState(resultState);
             Execution.fork().start(e1 -> {
+              e1.add(WorkStatus.class, workStatus);
               workStatusRepository.save(workStatus).operation().then();
               List<WorkCompletionHandler> completionHandlers = Lists
                   .newArrayList(workConstants.context.getAll(WorkCompletionHandler.class));
