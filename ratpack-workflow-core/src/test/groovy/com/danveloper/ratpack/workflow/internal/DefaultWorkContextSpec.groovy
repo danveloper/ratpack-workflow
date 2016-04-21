@@ -9,6 +9,7 @@ import ratpack.exec.Operation
 import ratpack.registry.Registry
 import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CountDownLatch
@@ -613,6 +614,32 @@ class DefaultWorkContextSpec extends Specification {
 
     when:
     run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
+
+  @Ignore("this test works, but need to figure out why it's dying in CI")
+  void "should be able to insert a WorkCompletionHandler to the context registry"() {
+    setup:
+    def latch = new CountDownLatch(1)
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all { ctx ->
+      ctx.next(Registry.single(WorkCompletionHandler, { registry, workStatus ->
+        Operation.of {
+          latch.countDown()
+        }
+      } as WorkCompletionHandler))
+    }
+    .all { ctx ->
+      ctx.complete()
+    }
+
+    when:
+    run(chain)
 
     and:
     latch.await(10, TimeUnit.SECONDS)

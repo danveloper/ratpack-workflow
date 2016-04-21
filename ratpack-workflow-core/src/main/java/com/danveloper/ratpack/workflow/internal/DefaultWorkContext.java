@@ -192,7 +192,7 @@ public class DefaultWorkContext implements WorkContext {
               e1.add(WorkStatus.class, workStatus);
               workStatusRepository.save(workStatus).operation().then();
               List<WorkCompletionHandler> completionHandlers = Lists
-                  .newArrayList(workConstants.context.getAll(WorkCompletionHandler.class));
+                  .newArrayList(workConstants.context.getAll(TypeToken.of(WorkCompletionHandler.class)));
               completionHandlers.forEach(handler -> handler.complete(workConstants.context, workStatus).then());
             });
           });
@@ -231,7 +231,7 @@ public class DefaultWorkContext implements WorkContext {
   private static class WorkConstants {
     private Execution execution;
     private EventLoop eventLoop;
-    private WorkContext context;
+    private DefaultWorkContext context;
     private boolean completed;
     private final Deque<ChainIndex> indexes = Lists.newLinkedList();
   }
