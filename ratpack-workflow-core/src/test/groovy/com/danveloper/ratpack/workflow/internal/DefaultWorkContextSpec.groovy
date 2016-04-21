@@ -547,7 +547,7 @@ class DefaultWorkContextSpec extends Specification {
   void "should call WorkCompletionHandler when work is finished"() {
     setup:
     def latch = new CountDownLatch(1)
-    def completionInterceptor = { Operation.of { latch.countDown() } } as WorkCompletionHandler
+    def completionInterceptor = { r, w -> Operation.of { latch.countDown() } } as WorkCompletionHandler
     InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
     DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
     .all { ctx ->
@@ -564,10 +564,10 @@ class DefaultWorkContextSpec extends Specification {
     0l == latch.count
   }
 
-  void "should have access to WorkStatus in WorkCompletionHandler"() {
+  void "should have access to WorkStatus in WorkCompletionHandler from Execution"() {
     setup:
     def latch = new CountDownLatch(1)
-    def completionInterceptor = {
+    def completionInterceptor = { registry, w1 ->
       def workStatus = Execution.current().get(WorkStatus)
       Operation.of {
         if (workStatus) {
@@ -580,6 +580,36 @@ class DefaultWorkContextSpec extends Specification {
         .all { ctx ->
       ctx.complete()
     }
+
+    when:
+    run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
+
+    and:
+    latch.await(10, TimeUnit.SECONDS)
+
+    then:
+    0l == latch.count
+  }
+
+  void "should be able to override complete(Registry, WorkStatus) to get better completion handling"() {
+    setup:
+    def latch = new CountDownLatch(1)
+    InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
+    DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
+    .all { ctx ->
+      ctx.next(Registry.single(String, "foo"))
+    }
+    .all { ctx ->
+      ctx.complete()
+    }
+    def completionInterceptor = { registry, workStatus ->
+      def str = registry.get(String)
+      Operation.of {
+        if (str == "foo") {
+          latch.countDown()
+        }
+      }
+    } as WorkCompletionHandler
 
     when:
     run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
