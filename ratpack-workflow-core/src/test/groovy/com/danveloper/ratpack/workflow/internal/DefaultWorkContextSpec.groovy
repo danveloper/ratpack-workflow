@@ -559,7 +559,7 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
 
     and:
-    latch.await(10, TimeUnit.SECONDS)
+    latch.await(60, TimeUnit.SECONDS)
 
     then:
     0l == latch.count
@@ -586,7 +586,7 @@ class DefaultWorkContextSpec extends Specification {
     run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))
 
     and:
-    latch.await(10, TimeUnit.SECONDS)
+    latch.await(60, TimeUnit.SECONDS)
 
     then:
     0l == latch.count
@@ -642,7 +642,7 @@ class DefaultWorkContextSpec extends Specification {
     run(chain)
 
     and:
-    latch.await(10, TimeUnit.SECONDS)
+    latch.await(60, TimeUnit.SECONDS)
 
     then:
     0l == latch.count
