@@ -515,7 +515,7 @@ class DefaultWorkContextSpec extends Specification {
           .operation()
           .then()
     }
-    execHarness.controller.eventLoopGroup.awaitTermination(1, TimeUnit.SECONDS)
+    execHarness.controller.eventLoopGroup.awaitTermination(10, TimeUnit.SECONDS)
   }
 
   void "insert with registry should propagate components down the chain"() {
