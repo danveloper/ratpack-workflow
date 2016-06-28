@@ -10,6 +10,8 @@ import groovy.lang.Closure;
 import groovy.lang.DelegatesTo;
 import groovy.lang.GroovySystem;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
 import io.netty.util.CharsetUtil;
 import ratpack.file.FileSystemBinding;
 import ratpack.func.Action;
@@ -24,11 +26,14 @@ import ratpack.groovy.script.ScriptNotFoundException;
 import ratpack.guice.BindingsSpec;
 import ratpack.guice.Guice;
 import ratpack.handling.Handler;
+import ratpack.handling.HandlerDecorator;
+import ratpack.impose.Impositions;
 import ratpack.registry.Registry;
 import ratpack.server.*;
-import ratpack.server.internal.BaseDirFinder;
-import ratpack.server.internal.FileBackedReloadInformant;
-import ratpack.server.internal.ServerCapturer;
+import ratpack.server.internal.*;
+import ratpack.service.internal.DefaultEvent;
+import ratpack.service.internal.ServicesGraph;
+import ratpack.util.Exceptions;
 import ratpack.util.internal.IoUtils;
 
 import java.nio.file.Files;
@@ -41,15 +46,45 @@ import static ratpack.util.Exceptions.uncheck;
 public abstract class GroovyRatpackWorkflow {
 
   public static RatpackServer of(@DelegatesTo(value = GroovyRatpackWorkflowServerSpec.class, strategy = Closure.DELEGATE_FIRST) Closure<?> configurer) throws Exception {
-    final RatpackWorkflow.RegistryHolder holder = new RatpackWorkflow.RegistryHolder();
-    RatpackServer server =  RatpackServer.of(d -> {
+    RatpackWorkflow.RegistryHolder holder = new RatpackWorkflow.RegistryHolder();
+    Action<RatpackServerSpec> definitionAction = d -> {
       GroovyRatpackWorkflowServerSpec spec = new GroovyRatpackWorkflowServerSpec((RatpackServerSpec)d);
       configurer.setDelegate(spec);
       configurer.setResolveStrategy(Closure.DELEGATE_FIRST);
       configurer.call();
-      holder.overrides = spec.getRegistry();
-    });
-    ServerCapturer.capture(server).registry(r -> holder.overrides.join(r));
+      holder.registry = spec.getRegistryDefaults();
+    };
+
+    RatpackServerDefinition serverDefinition = RatpackServerDefinition.build(definitionAction);
+
+    RatpackServer server = new DefaultRatpackServer(definitionAction, Impositions.current()) {
+      protected Channel buildChannel(final ServerConfig serverConfig, final ChannelHandler handlerAdapter) throws InterruptedException {
+        serverRegistry = holder.registry.join(serverRegistry);
+        Handler ratpackHandler = Exceptions.uncheck(() -> {
+          Handler h = buildRatpackHandler(serverRegistry, serverDefinition.getHandler());
+          h = decorateHandler(h, serverRegistry);
+          return h;
+        });
+
+        servicesGraph = Exceptions.uncheck(() -> new ServicesGraph(serverRegistry));
+        servicesGraph.start(new DefaultEvent(serverRegistry, reloading));
+        return super.buildChannel(serverConfig, Exceptions.uncheck(() -> new NettyHandlerAdapter(serverRegistry, ratpackHandler)));
+      }
+
+      private Handler decorateHandler(Handler rootHandler, Registry serverRegistry) throws Exception {
+        final Iterable<? extends HandlerDecorator> all = serverRegistry.getAll(HANDLER_DECORATOR_TYPE_TOKEN);
+        for (HandlerDecorator handlerDecorator : all) {
+          rootHandler = handlerDecorator.decorate(serverRegistry, rootHandler);
+        }
+        return rootHandler;
+      }
+
+      private Handler buildRatpackHandler(Registry serverRegistry, Function<? super Registry, ? extends Handler> handlerFactory) throws Exception {
+        return handlerFactory.apply(serverRegistry);
+      }
+    };
+
+    ServerCapturer.capture(server);
     return server;
   }
 

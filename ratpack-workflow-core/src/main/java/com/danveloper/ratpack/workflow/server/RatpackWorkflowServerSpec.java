@@ -10,6 +10,7 @@ import ratpack.func.Function;
 import ratpack.registry.Registry;
 import ratpack.server.RatpackServerSpec;
 import ratpack.server.internal.DelegatingRatpackServerSpec;
+import ratpack.util.Exceptions;
 
 public class RatpackWorkflowServerSpec extends DelegatingRatpackServerSpec {
   private WorkChainConfig workChainConfig = new WorkChainConfig();
@@ -18,12 +19,7 @@ public class RatpackWorkflowServerSpec extends DelegatingRatpackServerSpec {
     super(delegate);
   }
 
-  public RatpackWorkflowServerSpec registry(Function<? super Registry, ? extends Registry> function) {
-    super.registry(function);
-    return this;
-  }
-
-  public Registry getRegistry() throws Exception {
+  public Registry getRegistryDefaults() throws Exception {
     final FlowStatusRepository flowRepo = workChainConfig.getFlowStatusRepositoryFunction().apply(workChainConfig.workStatusRepository);
     return Registry.of(r -> r
         .add(WorkStatusRepository.class, workChainConfig.workStatusRepository)

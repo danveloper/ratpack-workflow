@@ -7,7 +7,7 @@ import ratpack.config.ConfigData
 import ratpack.exec.Promise
 import ratpack.func.Action
 import ratpack.registry.Registry
-import ratpack.server.internal.DefaultEvent
+import ratpack.service.internal.DefaultEvent
 import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
 import spock.lang.Specification

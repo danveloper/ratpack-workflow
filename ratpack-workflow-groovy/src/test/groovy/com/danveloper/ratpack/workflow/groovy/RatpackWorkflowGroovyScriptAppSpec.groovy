@@ -3,7 +3,8 @@ package com.danveloper.ratpack.workflow.groovy
 import com.danveloper.ratpack.workflow.groovy.internal.GroovyRatpackWorkflowScriptAppSpec
 import com.danveloper.ratpack.workflow.server.GroovyRatpackWorkflow
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
-import ratpack.groovy.Groovy
+import ratpack.impose.Impositions
+import ratpack.impose.ServerConfigImposition
 import ratpack.server.RatpackServer
 import ratpack.server.internal.ServerCapturer
 import ratpack.test.embed.EmbeddedApp
@@ -18,9 +19,11 @@ class RatpackWorkflowGroovyScriptAppSpec extends GroovyRatpackWorkflowScriptAppS
     new EmbeddedAppSupport() {
       @Override
       protected RatpackServer createServer() {
-        ServerCapturer.capture(new ServerCapturer.Overrides().port(0)) {
+        def server = Impositions.of({ i -> i.add(ServerConfigImposition.of { b -> b.port(0) })}).impose {
           RatpackWorkflow.of(GroovyRatpackWorkflow.Script.app(compileStatic, ratpackFile.canonicalFile.toPath()))
         }
+        ServerCapturer.capture(server)
+        server
       }
     }
   }
