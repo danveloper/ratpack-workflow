@@ -8,14 +8,8 @@ import com.danveloper.ratpack.workflow.internal.DefaultWorkStatus
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import com.fasterxml.jackson.databind.ObjectMapper
 import ratpack.exec.Promise
-import ratpack.func.Action
-import ratpack.server.RatpackServer
 import ratpack.test.embed.EmbeddedApp
-import ratpack.test.embed.internal.EmbeddedAppSupport
 import spock.lang.Specification
-
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 
 class FlowListHandlerSpec extends Specification {
 
@@ -26,7 +20,9 @@ class FlowListHandlerSpec extends Specification {
   EmbeddedApp app = fromServer(
       RatpackWorkflow.of { spec ->
         spec
-            .registryOf { r -> r.add(FlowStatusRepository, repo) }
+            .registryOf { r ->
+          r.add(FlowStatusRepository, repo)
+        }
             .serverConfig { d -> d.port(0) }
             .handlers { chain ->
           chain.all(new FlowListHandler())
