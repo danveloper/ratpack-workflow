@@ -1,7 +1,9 @@
 install: true
 language: java
 script:
-- ./gradlew -PbintrayUser=$BINTRAY_USER -PbintrayKey=$BINTRAY_KEY clean build artifactoryPublish
+- ./gradlew clean build 
+after_success:
+- test $TRAVIS_TAG != false || ./gradlew -PbintrayUser=$BINTRAY_USER -PbintrayKey=$BINTRAY_KEY artifactoryPublish
 cache:
   directories:
   - $HOME/.gradle
