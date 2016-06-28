@@ -105,7 +105,7 @@ A properly formed JSON payload can be POSTed to the `FlowSubmissionHandler` to s
 
 Given this JSON, a workflow definition like the following will be matched:
 
-```
+```groovy
 class WorkSomethingConfig {
   String key
   String key2
