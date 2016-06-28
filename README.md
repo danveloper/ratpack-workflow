@@ -1,7 +1,7 @@
 Ratpack Workflow
 ---
 
-A workflow engine for Ratpack, built on the Ratpack Execution Model
+A workflow engine for Ratpack, built on the Ratpack Execution Model. Requires Ratpack 1.3.3.
 
 [![Build Status](https://travis-ci.org/danveloper/ratpack-workflow.svg)](https://travis-ci.org/danveloper/ratpack-workflow)
 
@@ -16,7 +16,7 @@ repositories {
 }
 
 dependencies {
-  compile 'com.danveloper.ratpack.workflow:ratpack-workflow:0.1-SNAPSHOT'
+  compile 'com.danveloper.ratpack.workflow:ratpack-workflow:0.3.3'
 }
 ```
 
@@ -26,7 +26,7 @@ Quick Start
 The project ships with an extension to the regular Ratpack server specification. Nothing about your application needs to change except the class from which you import the `RatpackServer`. The below example shows importing the Groovy DSL from the `GroovyRatpackWorkflow` class, instead of Ratpack's `Groovy` class.
 
 ```groovy
-@Grab('com.danveloper.ratpack.workflow:ratpack-workflow-groovy:0.1-SNAPSHOT')
+@Grab('com.danveloper.ratpack.workflow:ratpack-workflow-groovy:0.3.3')
 
 import com.danveloper.ratpack.workflow.server.RatpackWorkflow
 import static com.danveloper.ratpack.workflow.server.GroovyRatpackWorkflow.ratpack
