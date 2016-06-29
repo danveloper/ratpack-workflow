@@ -77,6 +77,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(WorkStatusRepository, workStatusRepository)
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
+      r.add(WorkProcessor, processor)
     }
 
     when:
@@ -118,6 +119,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(WorkStatusRepository, workStatusRepository)
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
+      r.add(WorkProcessor, processor)
     }
 
     when:
@@ -164,6 +166,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
       r.add(FlowPreStartInterceptor, i)
+      r.add(WorkProcessor, processor)
     }
 
     when:
@@ -204,6 +207,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
       r.add(FlowErrorHandler, errorHandler)
+      r.add(WorkProcessor, processor)
     }
 
     when:
@@ -243,6 +247,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
       r.add(FlowErrorHandler, errorHandler)
+      r.add(WorkProcessor, processor)
     }
 
     when:
@@ -277,6 +282,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
       r.add(WorkChainDecorator, decorator)
+      r.add(WorkProcessor, processor)
     }
 
     when:
@@ -315,6 +321,7 @@ class DefaultWorkProcessorSpec extends Specification {
       r.add(FlowStatusRepository, flowStatusRepository)
       r.add(WorkChainConfig, workChainConfig)
       r.add(FlowCompletionHandler, completionHandler)
+      r.add(WorkProcessor, processor)
     }
 
     when:
