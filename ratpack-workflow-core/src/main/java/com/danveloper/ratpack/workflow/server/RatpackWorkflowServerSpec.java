@@ -1,16 +1,12 @@
 package com.danveloper.ratpack.workflow.server;
 
-import com.danveloper.ratpack.workflow.FlowStatusRepository;
-import com.danveloper.ratpack.workflow.WorkChain;
-import com.danveloper.ratpack.workflow.WorkProcessor;
-import com.danveloper.ratpack.workflow.WorkStatusRepository;
+import com.danveloper.ratpack.workflow.*;
 import com.danveloper.ratpack.workflow.internal.DefaultWorkProcessor;
+import com.danveloper.ratpack.workflow.internal.FlowProgressingWorkCompletionHandler;
 import ratpack.func.Action;
-import ratpack.func.Function;
 import ratpack.registry.Registry;
 import ratpack.server.RatpackServerSpec;
 import ratpack.server.internal.DelegatingRatpackServerSpec;
-import ratpack.util.Exceptions;
 
 public class RatpackWorkflowServerSpec extends DelegatingRatpackServerSpec {
   private WorkChainConfig workChainConfig = new WorkChainConfig();
@@ -26,6 +22,7 @@ public class RatpackWorkflowServerSpec extends DelegatingRatpackServerSpec {
         .add(FlowStatusRepository.class, flowRepo)
         .add(WorkChainConfig.class, workChainConfig)
         .add(WorkProcessor.class, new DefaultWorkProcessor())
+        .add(WorkCompletionHandler.class, new FlowProgressingWorkCompletionHandler())
     );
   }
 
