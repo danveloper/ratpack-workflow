@@ -2,6 +2,7 @@ package com.danveloper.ratpack.workflow.internal;
 
 import com.danveloper.ratpack.workflow.*;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import ratpack.api.Nullable;
 import ratpack.exec.Operation;
 import ratpack.registry.Registry;
@@ -25,7 +26,7 @@ public class FlowProgressingWorkCompletionHandler implements WorkCompletionHandl
   @Override
   public void onStart(StartEvent event) throws Exception {
     registry = event.getRegistry();
-    flowCompletionHandlers = Lists.newArrayList(registry.getAll(FlowCompletionHandler.class));
+    flowCompletionHandlers = Lists.newArrayList(Sets.newLinkedHashSet(registry.getAll(FlowCompletionHandler.class)));
     workProcessor = registry.get(WorkProcessor.class);
     flowStatusRepository = registry.get(FlowStatusRepository.class);
   }
@@ -35,6 +36,8 @@ public class FlowProgressingWorkCompletionHandler implements WorkCompletionHandl
     if (!initialized) {
       Exceptions.uncheck(() -> onStart(new DefaultEvent(registry, false)));
     }
+    initialized = true;
+
     Optional<FlowStatus> flowStatusOption = registry.maybeGet(FlowStatus.class);
 
     if (flowStatusOption.isPresent()) {

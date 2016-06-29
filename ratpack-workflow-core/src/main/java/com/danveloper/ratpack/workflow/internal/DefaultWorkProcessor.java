@@ -2,12 +2,14 @@ package com.danveloper.ratpack.workflow.internal;
 
 import com.danveloper.ratpack.workflow.*;
 import com.danveloper.ratpack.workflow.server.WorkChainConfig;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import ratpack.exec.Promise;
 import ratpack.registry.Registry;
 import ratpack.service.StartEvent;
 
 import java.util.List;
+import java.util.Optional;
 
 public class DefaultWorkProcessor implements WorkProcessor {
   private Work[] works;
@@ -18,8 +20,15 @@ public class DefaultWorkProcessor implements WorkProcessor {
 
   @Override
   public void onStart(StartEvent event) throws Exception {
-    registry = event.getRegistry().join(Registry.of(r -> r.add(WorkCompletionHandler.class,
-        new FlowProgressingWorkCompletionHandler())));
+    registry = event.getRegistry();
+
+    boolean alreadyApplied = Iterables.any(registry.getAll(WorkCompletionHandler.class),
+        h -> h.getClass().isAssignableFrom(FlowProgressingWorkCompletionHandler.class));
+
+    if (!alreadyApplied) {
+      registry = registry.join(Registry.of(r -> r.add(WorkCompletionHandler.class,
+          new FlowProgressingWorkCompletionHandler())));
+    }
     flowPreStartInterceptors = Lists.newArrayList(registry.getAll(FlowPreStartInterceptor.class));
     flowPreStartInterceptors.add(new StatusFlowInterceptor());
     WorkChainConfig config = registry.get(WorkChainConfig.class);
