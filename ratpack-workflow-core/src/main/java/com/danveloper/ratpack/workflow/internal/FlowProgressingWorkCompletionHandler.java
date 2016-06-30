@@ -39,24 +39,27 @@ public class FlowProgressingWorkCompletionHandler implements WorkCompletionHandl
     initialized = true;
 
     Optional<FlowStatus> flowStatusOption = registry.maybeGet(FlowStatus.class);
+    Operation retVal = Operation.noop();
 
     if (flowStatusOption.isPresent()) {
-      FlowStatus flowStatus = flowStatusOption.get();
-      if (workStatus.getState() == WorkState.COMPLETED) {
-        Optional<WorkStatus> workOption = flowStatus.getWorks()
-            .stream().filter(ws -> ws.getState() == WorkState.NOT_STARTED).findFirst();
-        if (workOption.isPresent()) {
-          WorkStatus nextWorkStatus = workOption.get();
-          workProcessor.start(nextWorkStatus, registry).operation().then();
-        } else {
-          completeFlow(flowStatus);
+      FlowStatus f = flowStatusOption.get();
+      retVal = flowStatusRepository.get(f.getId()).next(flowStatus -> {
+        if (workStatus.getState() == WorkState.COMPLETED) {
+          Optional<WorkStatus> workOption = flowStatus.getWorks()
+              .stream().filter(ws -> ws.getState() == WorkState.NOT_STARTED).findFirst();
+          if (workOption.isPresent()) {
+            WorkStatus nextWorkStatus = workOption.get();
+            workProcessor.start(nextWorkStatus, registry).operation().then();
+          } else {
+            completeFlow(flowStatus);
+          }
+        } else if (workStatus.getState() == WorkState.FAILED) {
+          failFlow(flowStatus);
         }
-      } else if (workStatus.getState() == WorkState.FAILED) {
-        failFlow(flowStatus);
-      }
+      }).operation();
     }
 
-    return Operation.noop();
+    return retVal;
   }
 
   private void failFlow(FlowStatus flow) {

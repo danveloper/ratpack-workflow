@@ -592,6 +592,7 @@ class DefaultWorkContextSpec extends Specification {
     0l == latch.count
   }
 
+  @Ignore("this test works, but need to figure out why it sucks so hard")
   void "should be able to override complete(Registry, WorkStatus) to get better completion handling"() {
     setup:
     def latch = new CountDownLatch(1)
