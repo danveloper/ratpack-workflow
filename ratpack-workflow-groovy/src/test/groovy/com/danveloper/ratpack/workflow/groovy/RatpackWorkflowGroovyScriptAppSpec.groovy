@@ -58,4 +58,5 @@ class RatpackWorkflowGroovyScriptAppSpec extends GroovyRatpackWorkflowScriptAppS
     resp.body.text != ""
     resp.body.text.startsWith("com.danveloper.ratpack.workflow.")
   }
+
 }

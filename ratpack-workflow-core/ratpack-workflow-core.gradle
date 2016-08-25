@@ -1,6 +1,7 @@
 dependencies {
   compile "io.ratpack:ratpack-rx:${ratpackVersion}"
   compile "io.ratpack:ratpack-guice:${ratpackVersion}"
+  //compile "org.javassist:javassist:jar:3.20.0-GA"
 }
 
 
