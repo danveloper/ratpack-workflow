@@ -193,7 +193,7 @@ public class DefaultWorkContext implements WorkContext {
               workStatusRepository.save(workStatus).operation().then();
               List<WorkCompletionHandler> completionHandlers = Lists
                   .newArrayList(workConstants.context.getAll(TypeToken.of(WorkCompletionHandler.class)));
-              completionHandlers.forEach(handler -> handler.complete((Registry)workConstants.context, (WorkStatus)workStatus).then());
+              completionHandlers.forEach(handler -> handler.complete(workConstants.context, workStatus).then());
             });
           });
 

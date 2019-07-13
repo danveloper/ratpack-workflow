@@ -27,55 +27,14 @@ public interface RatpackWorkflow {
 
   static RatpackServer of(Action<? super RatpackWorkflowServerSpec> definition) throws Exception {
     Action<RatpackServerSpec> definitionAction = d -> {
-      RatpackWorkflowServerSpec spec = new RatpackWorkflowServerSpec((RatpackServerSpec) d);
+      RatpackWorkflowServerSpec spec = new RatpackWorkflowServerSpec(d);
       definition.execute(spec);
-      RegistryHolder.registry = spec.getRegistryDefaults();
     };
 
-    ClassPool cp = ClassPool.getDefault();
-    CtClass clazz = cp.get(DefaultRatpackServer.class.getCanonicalName());
-    if (!clazz.isFrozen()) {
-      CtMethod m = clazz.getDeclaredMethod("buildAdapter");
-      m.insertAt(262, true, "serverRegistry = com.danveloper.ratpack.workflow.server.RatpackWorkflow.RegistryHolder.registry.join(serverRegistry);");
-      clazz.freeze();
-    }
-    ClassLoader cl = new DelegatingClassLoader(Thread.currentThread().getContextClassLoader());
-    Class rc = clazz.toClass(cl);
-    Object delegate = rc.getDeclaredConstructors()[0].newInstance(definitionAction, Impositions.current());
-
-    RatpackServer s1 = (RatpackServer)Proxy.newProxyInstance(RatpackWorkflow.class.getClassLoader(), new Class[]{RatpackServer.class}, new InvocationHandler() {
-      public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        return method.invoke(delegate, args);
-      }
-    });
+    RatpackServer s1 = new DefaultRatpackServer(definitionAction, Impositions.current());
 
     ServerCapturer.capture(s1);
     return s1;
-  }
-
-  class DelegatingClassLoader extends ClassLoader {
-
-    private final Map<String, Class> classCache = Maps.newHashMap();
-
-    DelegatingClassLoader(ClassLoader parent) {
-      super(parent);
-    }
-
-    @Override
-    public Class<?> loadClass(String clas) throws ClassNotFoundException {
-      if (clas.startsWith("ratpack.server.internal.DefaultRatpackServer")) {
-        return classCache.computeIfAbsent(clas, this::load);
-      }
-      return super.loadClass(clas);
-    }
-
-    private Class load(String clas) {
-      return Exceptions.uncheck(() -> {
-        ClassPool cp = ClassPool.getDefault();
-        CtClass ct = cp.get(clas);
-        return ct.toClass(this);
-      });
-    }
   }
 
   static RatpackServer start(Action<? super RatpackWorkflowServerSpec> definition) throws Exception {
