@@ -24,7 +24,7 @@ allprojects {
   apply plugin: 'artifactory'
  
   ext {
-    ratpackVersion = "1.3.3"
+    ratpackVersion = "1.6.1"
   }
 
   jacoco {
