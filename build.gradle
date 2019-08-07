@@ -32,7 +32,7 @@ allprojects {
   }
 
   group = "com.danveloper.ratpack.workflow"
-  version = "0.3.5"
+  version = "0.3.6-SNAPSHOT"
 
   dependencies {
     testCompile "org.codehaus.groovy:groovy-all:2.4.3"
