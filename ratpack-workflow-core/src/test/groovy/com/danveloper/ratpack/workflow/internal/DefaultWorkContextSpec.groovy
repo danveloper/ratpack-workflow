@@ -6,6 +6,7 @@ import ratpack.config.ConfigData
 import ratpack.exec.Blocking
 import ratpack.exec.Execution
 import ratpack.exec.Operation
+import ratpack.exec.Promise
 import ratpack.registry.Registry
 import ratpack.test.exec.ExecHarness
 import spock.lang.AutoCleanup
@@ -512,6 +513,9 @@ class DefaultWorkContextSpec extends Specification {
     ExecHarness.runSingle { exec ->
       DefaultWorkContext
           .start(chain.works as Work[], config, repository, registry)
+          .blockingOp {
+            Thread.sleep(200) //this is needed to ensure that the completion handlers are executed before the harness is closed
+          }
           .operation()
           .then()
     }
@@ -578,9 +582,9 @@ class DefaultWorkContextSpec extends Specification {
     } as WorkCompletionHandler
     InMemoryWorkStatusRepository repo = new InMemoryWorkStatusRepository()
     DefaultWorkChain chain = (DefaultWorkChain) new DefaultWorkChain(Registry.empty())
-        .all { ctx ->
-      ctx.complete()
-    }
+      .all { ctx ->
+        ctx.complete()
+      }
 
     when:
     run(chain, repo, Registry.single(WorkCompletionHandler, completionInterceptor))

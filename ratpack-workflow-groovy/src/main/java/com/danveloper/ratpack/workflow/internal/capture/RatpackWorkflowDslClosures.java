@@ -1,7 +1,5 @@
 package com.danveloper.ratpack.workflow.internal.capture;
 
-import com.danveloper.ratpack.workflow.FlowStatusRepository;
-import com.danveloper.ratpack.workflow.WorkStatusRepository;
 import com.danveloper.ratpack.workflow.server.GroovyRatpackWorkflow;
 import groovy.lang.Closure;
 import ratpack.func.Block;
